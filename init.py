@@ -1,27 +1,20 @@
-#     Discord api   https://discordpy.readthedocs.io/en/stable/api.html
-#     Warmane api   https://armory.warmane.com/api/guild/Lions+Pride/Lordaeron/members
-#                   http://armory.warmane.com/api/character/Gotfai/Lordaeron/summary
-#                   http://armory.warmane.com/api/team/name/realm/type
-#    Database api   http://mop.cavernoftime.com/api
-
-
-
 # ⚪️ Standard lib
 import os
 import random
 from dotenv import load_dotenv
 
-
-# 🟡 Third party
+# ⚪️ Third party
 import asyncio
-import requests 
 import discord
+
+# Internal
+from scraper import scrape
+
 
 
 # 🔴 Settings
 load_dotenv()
-TOKEN = os.getenv('DISCORD_TOKEN')
-GUILD_URL = "https://armory.warmane.com/api/guild/Lions+Pride/Lordaeron/members"
+TOKEN = os.getenv('DISCORD_TOKEN') # authentication token is stored in .env file locally
 POST_STARFALL_QUOTES = [
     'Bestworldx has no mana for DI! ☄️☄️☄️',
     'Dcarl has no SIMBOLS DE DIVINIDAD! ☄️☄️☄️',
@@ -33,9 +26,6 @@ POST_STARFALL_QUOTES = [
 
 
 # 🟢 Exec
-with requests.get(GUILD_URL, headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}) as result:
-    print(result.content.decode())
-
 client = discord.Client()
 
 # send print after bot init
@@ -44,12 +34,12 @@ async def on_ready():
     print(f'{client.user.name} has connected to Discord!')
 
 # send to new users joining the server
-@client.event
-async def on_member_join(member):
-    await member.create_dm()
-    await member.dm_channel.send(
-        f'Hi {member.name}, gib me strudels!'
-    )
+#@client.event
+#async def on_member_join(member):
+#    await member.create_dm()
+#    await member.dm_channel.send(
+#        f'Hi {member.name}, gib me strudels!'
+#    )
 
 # if user writes "tomb", then bot asks given dude for :sindra: reaction. If user gives it, then bot responds with random "belly/head" OR "Wipe" if 60 secs pass w/o any action
 # if someone writes "Starfall", a random str gets printed by the bot
@@ -60,7 +50,7 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    # if someone says heh -> bot triggers
+    # tomb keyword
     elif message.content.startswith('tomb'):
         channel = message.channel
         await channel.send('Send me that <:sindra:853223712702201858> reaction, %s!' % message.author.name)
@@ -75,9 +65,21 @@ async def on_message(message):
         else:
             await channel.send(random.choice(["Belly!", "Head!"]))
 
-
+    # Starfall keyword
     if message.content == 'Starfall':
         response = random.choice(POST_STARFALL_QUOTES)
+        await message.channel.send(response)
+
+    # who keyword
+    if message.content.startswith('!who '):
+        query = message.content.split()[-1]  # get the last word of the call - "!who is Andrew"  and "!who Andrew" and "!who the fuck is Andrew" work
+        response = scrape("character", query)
+        await message.channel.send(response)
+
+    # who keyword
+    if message.content.startswith('!guild '):
+        query = message.content.split(" ", 1)[1]  # split by 1 space only, i.e. get everything after the space
+        response = scrape("guild", query)
         await message.channel.send(response)
 
 

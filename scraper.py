@@ -1,61 +1,71 @@
 # 🟡 Third party modules
-from os import replace
-import numpy as np
 import requests
+import html_to_json
 
 
-# 🔴 Settings
-HEADERS = "{'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}"
-# headers required since api denies bot calls
+# Exec
+def scrapeCall(CATEGORY, QUERY, REALM="Lordaeron"):
 
+    ANSWER = ""
+    BASE_URL = "http://armory.warmane.com/character/{character}/{realm}/".format(character=QUERY, realm=REALM)
+    TO_CHECK = {
+        "ICC25": {
+            "id": 15042,
+            "achis": {
+                # NM
+                "ach4604": [4, "Lower"], #  4 bosses - lower
+                "ach4605": [3, "Plague"], #  3 bosses - plague
+                "ach4606": [2, "Blood"], #  2 bosses - blood
+                "ach4607": [2, "Frost"], #  2 bosses - frost
+                "ach4597": [1, "LK"],  #  1 - big boye
+                # HC
+                "ach4632": [40, "Lower HC"], #  4 bosses - lower
+                "ach4633": [30, "Plague HC"], #  3 bosses - plague
+                "ach4634": [20, "Blood HC"], #  2 bosses - blood
+                "ach4635": [20, "Frost HC"], #  2 bosses - frost
+                "ach4584": [10, "LK HC"],  #  1 - big boye
+            },
+        },
+        "ICC10": {
+            "id": 15041,
+            "achis": {
+                # NM
+                "ach4531": [4, "Lower"], #  4 bosses - lower
+                "ach4528": [3, "Plague"], #  3 bosses - plague
+                "ach4529": [2, "Blood"], #  2 bosses - blood
+                "ach4527": [2, "Frost"], #  2 bosses - frost
+                "ach4532": [1, "LK"],  #  1 - big boye
+                # HC
+                "ach4628": [40, "Lower HC"], #  4 bosses - lower
+                "ach4629": [30, "Plague HC"], #  3 bosses - plague
+                "ach4630": [20, "Blood HC"], #  2 bosses - blood
+                "ach4631": [20, "Frost HC"], #  2 bosses - frost
+                "ach4636": [10, "LK HC"]  #  1 - big boye
+            }
+        }
+    }
 
-# 🟢 Exec
-def scrape(TYPE, QUERY, REALM="Lordaeron"):
+    if CATEGORY=="character":
 
-    # 🟢 player data called
-    if TYPE == "character":
+        # scrape achievements
+        url = BASE_URL + "/achievements"
 
-        # capitalize nickname coz dumdum api doesn't understand otherwise
-        QUERY = QUERY.capitalize()
+        for instance_name, instance_data in TO_CHECK.items():
+            headers = {'Authorization': 'Bearer 05f7544e468d6067a914a781660486a9612df4478e', 'Cookie': 'PHPSESSID=k3mkdkk1be86l5kr7bu2th5chn'}
+            response = requests.request("POST", url, headers=headers, data={'category': instance_data["id"]})
+            response_json = html_to_json.convert(response.text[12:-2].encode().decode('unicode_escape').replace("\\/","/"))
+            response_json = response_json["div"][0]["div"]
+            score_nm, score_hc = 0, 0
 
-        # death grip the data
-        with requests.get("http://armory.warmane.com/api/character/{query}/{realm}/summary".format(query=QUERY, realm=REALM), HEADERS) as result:
-            result_array = result.json()
+            for element in response_json:
+                if element["_attributes"]["id"] in instance_data["achis"].keys():  # check if this element is one of achis we need to check
+                    if len(element["div"])==5 and element["div"][4]["_attributes"]["class"][0] == 'date':  # check if theres 5 elements and if 5th is 'date'
+                        ANSWER += element["div"][4]["_value"][7:] + " - " + instance_data["achis"][element["_attributes"]["id"]][1] + "\n"
+                        if instance_data["achis"][element["_attributes"]["id"]][0] < 5:  # if score for this achi is below 5 i.e. is normal
+                            score_nm += instance_data["achis"][element["_attributes"]["id"]][0]
+                        else:
+                            score_hc += instance_data["achis"][element["_attributes"]["id"]][0]
 
-            # dictionary of class emojis
-            classes = {"Mage": '<:classmage:855739857409146880>', 
-                       "Death Knight": '<:classdk:855748451677634560>',
-                       "Hunter": '<:classhunter:855748451623370762>',
-                       "Druid": '<:classdruid:855748451799138344>',
-                       "Paladin": '<:classpaladin:855748451735699456>',
-                       "Priest": '<:classpriest:855748451782230026>',
-                       "Rogue": '<:classrogue:855748451812114443>',
-                       "Shaman": '<:classshaman:855748451643031553>:',
-                       "Warlock": '<:classwarlock:855748451672260608>',
-                       "Warrior": '<:classwarrior:855748451644211200>'}
-
-            return "\n{icon}**{level}** {name} is the best {race} that has ever existed on Azeroth.".format(icon=classes[result_array["class"]], level=result_array["level"], race=result_array["race"].lower(), name=result_array["name"])
-
-    # 🟢 if duder taunts guild data
-    elif TYPE == "guild":
-
-        # replace spaces with plus signs
-        if " " in QUERY:
-            QUERY.replace(" ", "+")
-
-        # death grip the data
-        with requests.get("https://armory.warmane.com/api/guild/{query}/{realm}/members".format(query=QUERY, realm=REALM), HEADERS) as result:
-            result_array = result.json()
-            guild_name = result_array["name"]
-
-            # Count online dudes
-            online_counter = 0
-            online_names = []
-            for i in range(int(result_array["membercount"])):  # loop through the list
-                if result_array["roster"][i]["online"]:  # if "online" is TRUE
-                    online_counter += 1
-                    online_names.append(result_array["roster"][i]["name"])
-                    online_names_list = ", ".join(str(x) for x in online_names)
-
-        return "\n{name} has {amount} members, {online_amount} online: {online}.".format(name=guild_name, amount=result_array["membercount"], online_amount=online_counter, online=online_names_list)
-
+            ANSWER += instance_name + " (" + str(int(score_nm)) + "/12) (" + str(int(score_hc/10)) + "/12 HC)" + "\n"
+            
+    return ANSWER

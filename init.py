@@ -8,7 +8,8 @@ import asyncio
 import discord
 
 # Internal
-from scraper import scrape
+from api import apiCall
+from scraper import scrapeCall
 
 
 
@@ -59,9 +60,9 @@ async def on_message(message):
             return user == message.author and str(reaction.emoji) == '<:sindra:853223712702201858>'
 
         try:
-            reaction, user = await client.wait_for('reaction_add', timeout=60.0, check=check)
+            reaction, user = await client.wait_for('reaction_add', timeout=10.0, check=check)
         except asyncio.TimeoutError:
-            await channel.send('Wipe')
+            await channel.send('{} has wiped on Sindy.'.format(message.author.name))
         else:
             await channel.send(random.choice(["Belly!", "Head!"]))
 
@@ -70,16 +71,17 @@ async def on_message(message):
         response = random.choice(POST_STARFALL_QUOTES)
         await message.channel.send(response)
 
-    # who keyword
+    # !who keyword
     if message.content.startswith('!who '):
         query = message.content.split()[-1]  # get the last word of the call - "!who is Andrew"  and "!who Andrew" and "!who the fuck is Andrew" work
-        response = scrape("character", query)
-        await message.channel.send(response)
+        api_response = apiCall("character", query)
+        scrape_response = scrapeCall("character", "Gotfai")
+        await message.channel.send(api_response + "\n" + scrape_response)
 
-    # who keyword
+    # !guild keyword
     if message.content.startswith('!guild '):
         query = message.content.split(" ", 1)[1]  # split by 1 space only, i.e. get everything after the space
-        response = scrape("guild", query)
+        response = apiCall("guild", query)
         await message.channel.send(response)
 
 

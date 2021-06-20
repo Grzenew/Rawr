@@ -73,9 +73,9 @@ async def on_message(message):
 
     # !who keyword
     if message.content.startswith('!who '):
-        query = message.content.split()[-1]  # get the last word of the call - "!who is Andrew"  and "!who Andrew" and "!who the fuck is Andrew" work
+        query = message.content.split()[-1].capitalize()  # get the last word of the call - "!who is Andrew"  and "!who Andrew" and "!who the fuck is Andrew" work
         api_response = apiCall("character", query)
-        scrape_response = scrapeCall("character", "Gotfai")
+        scrape_response = scrapeCall("character", query)
         await message.channel.send(api_response + "\n" + scrape_response)
 
     # !guild keyword
@@ -83,6 +83,19 @@ async def on_message(message):
         query = message.content.split(" ", 1)[1]  # split by 1 space only, i.e. get everything after the space
         response = apiCall("guild", query)
         await message.channel.send(response)
+
+    # !sexy keyword
+    # WIP
+    if message.content.startswith('!sexy '):
+        embedVar = discord.Embed(title="Gotfai", description="His staff is longer than his height.", uel='http://armory.warmane.com/character/Gotfai/Lordaeron/achievements', color=0xdab022)
+        embedVar.add_field(name="ICC10", value="12/12")
+        embedVar.add_field(name="ICC10 Heroic", value="-3/12", inline=True)
+        embedVar.add_field(name="\u200b", value="\u200b", inline=True) # empty to skip 3rd column in this row
+        embedVar.add_field(name="ICC25", value="12/12", inline=True)
+        embedVar.add_field(name="ICC25 Heroic", value="-2137/12", inline=True)
+        embedVar.add_field(name="\u200b", value="\u200b", inline=True) # empty to skip 3rd column in this row, otherwise it glitches
+        embedVar.set_thumbnail(url='https://cdn.discordapp.com/emojis/855739857409146880.png')
+        await message.channel.send(embed=embedVar)
 
 
 client.run(TOKEN)

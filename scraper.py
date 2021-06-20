@@ -62,10 +62,12 @@ def scrapeCall(CATEGORY, QUERY, REALM="Lordaeron"):
                     if len(element["div"])==5 and element["div"][4]["_attributes"]["class"][0] == 'date':  # check if theres 5 elements and if 5th is 'date'
                         ANSWER += element["div"][4]["_value"][7:] + " - " + instance_data["achis"][element["_attributes"]["id"]][1] + "\n"
                         if instance_data["achis"][element["_attributes"]["id"]][0] < 5:  # if score for this achi is below 5 i.e. is normal
-                            score_nm += instance_data["achis"][element["_attributes"]["id"]][0]
+                            score_nm += instance_data["achis"][element["_attributes"]["id"]][0]  # add to nm score
                         else:
-                            score_hc += instance_data["achis"][element["_attributes"]["id"]][0]
+                            score_hc += instance_data["achis"][element["_attributes"]["id"]][0]  # add to hc score
 
+            # answer is: ICC10 (12/12) (4/12 HC)
+            # the HC score is divided by 10, because the scores in the dictionary are 10/20/30 etc
             ANSWER += instance_name + " (" + str(int(score_nm)) + "/12) (" + str(int(score_hc/10)) + "/12 HC)" + "\n"
             
     return ANSWER

@@ -14,9 +14,6 @@ def apiCall(CATEGORY, QUERY, REALM="Lordaeron"):
     # 🟢 player data called
     if CATEGORY == "character":
 
-        # capitalize nickname coz dumdum api doesn't understand otherwise
-        QUERY = QUERY.capitalize()
-
         # death grip the data
         with requests.get("http://armory.warmane.com/api/character/{character_name}/{realm}/summary".format(character_name=QUERY, realm=REALM), HEADERS) as result:
             result_array = result.json()

@@ -6,6 +6,7 @@ import requests, json
 # 🔴 Settings
 HEADERS = "{'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}"
 # headers required since api denies bot calls
+ANSWER = {}
 
 
 # 🟢 Exec
@@ -26,16 +27,18 @@ def apiCall(CATEGORY, QUERY, REALM="Lordaeron"):
                             "Paladin": '<:classpaladin:855748451735699456>',
                             "Priest": '<:classpriest:855748451782230026>',
                             "Rogue": '<:Rogue:579532030086217748>',
-                            "Shaman": '<:classshaman:855748451643031553>:',
+                            "Shaman": '<:classshaman:855748451643031553>',
                             "Warlock": '<:classwarlock:855748451672260608>',
                             "Warrior": '<:classwarrior:855748451644211200>' }
 
-            # dictionary of comments
-            player_comments = {
-                "Bregna": "nab"
-            }
+            print("Accessed API data for " + QUERY)  
+            return {"level": result_array["level"],
+                    "class": result_array["class"],
+                    "guild": result_array["guild"],
+                    "specs": result_array["talents"][0]["tree"] + "/" + result_array["talents"][1]["tree"],
+                    "race": result_array["race"]}
 
-            return "\n{icon}**{level}** {name} is a sexy {race}.".format(icon=class_icons[result_array["class"]], level=result_array["level"], race=result_array["race"].lower(), name=result_array["name"])
+            # return "\n{icon}**{level}** {name} is a sexy {race}.".format(icon=class_icons[result_array["class"]], level=result_array["level"], race=result_array["race"].lower(), name=result_array["name"])
 
     # 🟢 if duder taunts guild data
     elif CATEGORY == "guild":

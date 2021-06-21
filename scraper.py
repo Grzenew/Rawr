@@ -6,7 +6,7 @@ import html_to_json
 # Exec
 def scrapeCall(CATEGORY, QUERY, REALM="Lordaeron"):
 
-    ANSWER = ""
+    ANSWER = {}
     BASE_URL = "http://armory.warmane.com/character/{character}/{realm}/".format(character=QUERY, realm=REALM)
     TO_CHECK = {
         "ICC25": {
@@ -17,13 +17,13 @@ def scrapeCall(CATEGORY, QUERY, REALM="Lordaeron"):
                 "ach4605": [3, "Plague"], #  3 bosses - plague
                 "ach4606": [2, "Blood"], #  2 bosses - blood
                 "ach4607": [2, "Frost"], #  2 bosses - frost
-                "ach4597": [1, "LK"],  #  1 - big boye
+                "ach4608": [1, "LK"],  #  1 - big boye
                 # HC
                 "ach4632": [40, "Lower HC"], #  4 bosses - lower
                 "ach4633": [30, "Plague HC"], #  3 bosses - plague
                 "ach4634": [20, "Blood HC"], #  2 bosses - blood
                 "ach4635": [20, "Frost HC"], #  2 bosses - frost
-                "ach4584": [10, "LK HC"],  #  1 - big boye
+                "ach4637": [10, "LK HC"],  #  1 - big boye
             },
         },
         "ICC10": {
@@ -56,11 +56,13 @@ def scrapeCall(CATEGORY, QUERY, REALM="Lordaeron"):
             response_json = html_to_json.convert(response.text[12:-2].encode().decode('unicode_escape').replace("\\/","/"))
             response_json = response_json["div"][0]["div"]
             score_nm, score_hc = 0, 0
+            ANSWER[instance_name] = {}
+            ANSWER[instance_name] = {"achievements": {}}
 
             for element in response_json:
                 if element["_attributes"]["id"] in instance_data["achis"].keys():  # check if this element is one of achis we need to check
                     if len(element["div"])==5 and element["div"][4]["_attributes"]["class"][0] == 'date':  # check if theres 5 elements and if 5th is 'date'
-                        ANSWER += element["div"][4]["_value"][7:] + " - " + instance_data["achis"][element["_attributes"]["id"]][1] + "\n"
+                        ANSWER[instance_name]["achievements"][instance_data["achis"][element["_attributes"]["id"]][1]] = element["div"][4]["_value"][7:]
                         if instance_data["achis"][element["_attributes"]["id"]][0] < 5:  # if score for this achi is below 5 i.e. is normal
                             score_nm += instance_data["achis"][element["_attributes"]["id"]][0]  # add to nm score
                         else:
@@ -68,6 +70,9 @@ def scrapeCall(CATEGORY, QUERY, REALM="Lordaeron"):
 
             # answer is: ICC10 (12/12) (4/12 HC)
             # the HC score is divided by 10, because the scores in the dictionary are 10/20/30 etc
-            ANSWER += instance_name + " (" + str(int(score_nm)) + "/12) (" + str(int(score_hc/10)) + "/12 HC)" + "\n"
-            
+            ANSWER[instance_name]["score_nm"] = str(int(score_nm))
+            ANSWER[instance_name]["score_hc"] = str(int(score_hc/10))
+            #ANSWER += instance_name + " (" + str(int(score_nm)) + "/12) (" + str(int(score_hc/10)) + "/12 HC)" + "\n"
+
+    print("Scraped data for " + QUERY)            
     return ANSWER

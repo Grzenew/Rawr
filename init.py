@@ -1,8 +1,7 @@
-# coding: utf-8
-
 # ⚪️ Standard lib
 import os
 import random
+from sys import api_version
 from dotenv import load_dotenv
 
 # ⚪️ Third party
@@ -73,12 +72,13 @@ async def on_message(message):
         response = random.choice(POST_STARFALL_QUOTES)
         await message.channel.send(response)
 
-    # !who keyword
-    if message.content.startswith('!who '):
+    # !old who keyword
+    """if message.content.startswith('!who '):
         query = message.content.split()[-1].capitalize()  # get the last word of the call - "!who is Andrew"  and "!who Andrew" and "!who the fuck is Andrew" work
         api_response = apiCall("character", query)
         scrape_response = scrapeCall("character", query)
         await message.channel.send(api_response + "\n" + scrape_response)
+    """
 
     # !guild keyword
     if message.content.startswith('!guild '):
@@ -86,17 +86,36 @@ async def on_message(message):
         response = apiCall("guild", query)
         await message.channel.send(response)
 
-    # !sexy keyword
-    # WIP
-    if message.content.startswith('!sexy '):
-        embedVar = discord.Embed(title="Gotfai", description="His staff is longer than his height.", uel='http://armory.warmane.com/character/Gotfai/Lordaeron/achievements', color=0xdab022)
-        embedVar.add_field(name="ICC10", value="12/12")
-        embedVar.add_field(name="ICC10 Heroic", value="-3/12", inline=True)
-        embedVar.add_field(name="\u200b", value="\u200b", inline=True) # empty to skip 3rd column in this row
-        embedVar.add_field(name="ICC25", value="12/12", inline=True)
-        embedVar.add_field(name="ICC25 Heroic", value="-2137/12", inline=True)
-        embedVar.add_field(name="\u200b", value="\u200b", inline=True) # empty to skip 3rd column in this row, otherwise it glitches
-        embedVar.set_thumbnail(url='https://cdn.discordapp.com/emojis/855739857409146880.png')
+    # !who keyword
+    if message.content.startswith('!who '):
+        query = message.content.split()[-1].capitalize()
+        api_response = apiCall("character", query)
+        scrape_response = scrapeCall("character", query)
+
+        class_icons = { "Mage": '855739857409146880', 
+                        "Death Knight": '855748451677634560',
+                        "Hunter": '855748451623370762',
+                        "Druid": '855748451799138344',
+                        "Paladin": '855748451735699456',
+                        "Priest": '855748451782230026',
+                        "Rogue": '579532030086217748',
+                        "Shaman": '855748451643031553',
+                        "Warlock": '855748451672260608',
+                        "Warrior": '855748451644211200' }
+
+        title = query + " (" + api_response["level"] + ")"
+        description = api_response["guild"] + " • " + api_response["specs"]
+
+        embedVar = discord.Embed(title=title, description=description, url='http://armory.warmane.com/character/{nick}/Lordaeron/achievements'.format(nick=query), color=0xdab022)
+        if int(scrape_response["ICC10"]["score_nm"]) > 0:
+            embedVar.add_field(name="ICC10", value=scrape_response["ICC10"]["score_nm"] + "/12")
+        if int(scrape_response["ICC25"]["score_nm"]) > 0:
+            embedVar.add_field(name="ICC25", value=scrape_response["ICC25"]["score_nm"] + "/12", inline=True)
+        if int(scrape_response["ICC10"]["score_hc"]) > 0:
+            embedVar.add_field(name="ICC10 Heroic", value=scrape_response["ICC10"]["score_hc"] + "/12", inline=True)
+        if int(scrape_response["ICC25"]["score_hc"]) > 0:
+            embedVar.add_field(name="ICC25 Heroic", value=scrape_response["ICC25"]["score_hc"] + "/12", inline=True)
+        embedVar.set_thumbnail(url='https://cdn.discordapp.com/emojis/{class_icon_id}.png'.format(class_icon_id=class_icons[api_response["class"]]))
         await message.channel.send(embed=embedVar)
 
 

@@ -1,65 +1,99 @@
-# 🟡 Third party modules
-from os import replace
-import requests, json
+#  Third party modules ———————————————————————————————————————————————————————————————————————————
+import logging as log
+import requests
+from sys import getsizeof, stdout
 
 
-# 🔴 Settings
+#  Settings ——————————————————————————————————————————————————————————————————————————————————————
+##  headers are required since api denies bot calls
 HEADERS = "{'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}"
-# headers required since api denies bot calls
-ANSWER = {}
+##  logger config
+log.basicConfig(
+    filename='rawr.log', 
+    filemode='a', 
+    format='%(asctime)s %(levelname).4s (%(lineno).3s %(funcName)s)  %(message)s', 
+    datefmt='[%Y/%m/%d %H:%M:%S]',
+    level=log.INFO)
 
 
-# 🟢 Exec
+#  Exec ——————————————————————————————————————————————————————————————————————————————————————————
 def apiCall(CATEGORY, QUERY, REALM="Lordaeron"):
+    log.info('Received API call for {} {}.'.format(CATEGORY, QUERY))
+    ANSWER = {}
 
-    # 🟢 player data called
-    if CATEGORY == "character":
+    try:
+        ##  death grip the data
+        with requests.get("http://armory.warmane.com/api/{category}/{query}/{realm}/summary".format(category=CATEGORY, query=QUERY, realm=REALM), HEADERS) as result:
+            result_array = result.json()  # save JSON response into python object
 
-        # death grip the data
-        with requests.get("http://armory.warmane.com/api/character/{character_name}/{realm}/summary".format(character_name=QUERY, realm=REALM), HEADERS) as result:
-            result_array = result.json()
+            ###  if an error was returned
+            if "error" in result_array:
+                ###  if given thing does not exist
+                if result_array["error"][-15:] == "does not exist.":  
+                    ANSWER = "doesnt exist"
+                    log.info('{} "{}" does not exist.'.format(CATEGORY.capitalize(), QUERY))
+                ###  if there was another error
+                elif result_array["error"]:
+                    ANSWER = "error"
+                    log.error('Other error: {}'.format(result_array))
 
-            # dictionary of class emojis
-            class_icons = { "Mage": '<:classmage:855739857409146880>', 
-                            "Death Knight": '<:classdk:855748451677634560>',
-                            "Hunter": '<:classhunter:855748451623370762>',
-                            "Druid": '<:classdruid:855748451799138344>',
-                            "Paladin": '<:classpaladin:855748451735699456>',
-                            "Priest": '<:classpriest:855748451782230026>',
-                            "Rogue": '<:Rogue:579532030086217748>',
-                            "Shaman": '<:classshaman:855748451643031553>',
-                            "Warlock": '<:classwarlock:855748451672260608>',
-                            "Warrior": '<:classwarrior:855748451644211200>' }
+            ###  if there's no response from server
+            elif result == "":
+                ANSWER = "crash"
+                log.error('No answer from server, probably it has crashed.')
 
-            print("Accessed API data for " + QUERY)  
-            return {"level": result_array["level"],
-                    "class": result_array["class"],
-                    "guild": result_array["guild"],
-                    "specs": result_array["talents"][0]["tree"] + "/" + result_array["talents"][1]["tree"],
-                    "race": result_array["race"]}
+            ###  if there has been no error
+            else:
 
-            # return "\n{icon}**{level}** {name} is a sexy {race}.".format(icon=class_icons[result_array["class"]], level=result_array["level"], race=result_array["race"].lower(), name=result_array["name"])
+                ### Character data called
+                if CATEGORY == "character":
 
-    # 🟢 if duder taunts guild data
-    elif CATEGORY == "guild":
+                    ### Save the data into a nice dictionary object
+                    ANSWER = {
+                        "level": result_array["level"],
+                        "class": result_array["class"],
+                        "guild": result_array["guild"],
+                        "specs": "/".join(str(x["tree"]) for x in result_array["talents"]),
+                        "race": result_array["race"]
+                    }
+                    print(ANSWER["specs"])
 
-        # replace spaces with plus signs
-        if " " in QUERY:
-            QUERY.replace(" ", "+")
+                    ### Return data and save info to log
+                    log.info('Returning {} bytes.'.format(getsizeof(ANSWER)))
+                    return ANSWER 
 
-        # death grip the data
-        with requests.get("https://armory.warmane.com/api/guild/{guild}/{realm}/members".format(guild=QUERY, realm=REALM), HEADERS) as result:
-            result_array = result.json()
-            guild_name = result_array["name"]
 
-            # Count online dudes
-            online_counter = 0
-            online_names = []
-            for i in range(int(result_array["membercount"])):  # loop through the list
-                if result_array["roster"][i]["online"]:  # if "online" is TRUE
-                    online_counter += 1
-                    online_names.append(result_array["roster"][i]["name"])
-                    online_names_list = ", ".join(str(x) for x in online_names)
+                ###  Guild data called
+                elif CATEGORY == "guild":
 
-        return "\n{guild} has {amount} members, {online_amount} online: {online}.".format(guild=guild_name, amount=result_array["membercount"], online_amount=online_counter, online=online_names_list)
+                    online_counter = 0
+                    online_names = []
 
+                    ###  Count online dudes
+                    for i in range(int(result_array["membercount"])):  ### loop through the list
+                        if result_array["roster"][i]["online"]:  ### if "online" is TRUE
+                            online_counter += 1
+                            online_names.append(result_array["roster"][i]["name"])  ### also add the nickname to a list
+
+                    ### if there is more than 0 online
+                    if online_counter > 0:
+                        ANSWER["online_names_list"] = ", ".join(str(x) for x in online_names)
+                        print(ANSWER["online_names_list"])
+
+                    ### save the data into a dict
+                    ANSWER.update({
+                        "name": result_array["name"],
+                        "online_counter": online_counter,
+                        "membercount": result_array["membercount"]
+                    })
+
+                    log.info('Returning {} bytes.'.format(getsizeof(ANSWER)))
+
+    except Exception as e:
+        ANSWER = "error"
+        log.error(e)
+
+    return ANSWER
+
+#print(apiCall("guild", "Lions Pridxe"))
+#print(apiCall("character", "Gotfai"))

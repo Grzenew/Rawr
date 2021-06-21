@@ -56,7 +56,6 @@ def apiCall(CATEGORY, QUERY, REALM="Lordaeron"):
                         "specs": "/".join(str(x["tree"]) for x in result_array["talents"]),
                         "race": result_array["race"]
                     }
-                    print(ANSWER["specs"])
 
                     ### Return data and save info to log
                     log.info('Returning {} bytes.'.format(getsizeof(ANSWER)))
@@ -78,7 +77,6 @@ def apiCall(CATEGORY, QUERY, REALM="Lordaeron"):
                     ### if there is more than 0 online
                     if online_counter > 0:
                         ANSWER["online_names_list"] = ", ".join(str(x) for x in online_names)
-                        print(ANSWER["online_names_list"])
 
                     ### save the data into a dict
                     ANSWER.update({

@@ -3,7 +3,7 @@ import requests
 import html_to_json
 
 
-#  Exec ——————————————————————————————————————————————————————————————————————————————————————————
+# Exec
 def scrapeCall(CATEGORY, QUERY, REALM="Lordaeron"):
 
     ANSWER = {}

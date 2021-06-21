@@ -2,6 +2,7 @@
 Discord bot for them rawrs and strudels.
 
 * Discord api   https://discordpy.readthedocs.io/en/stable/api.html
+  * message - https://discordpy.readthedocs.io/en/stable/api.html#message
 * Warmane api
   * guild - https://armory.warmane.com/api/guild/Lions+Pride/Lordaeron/members
   * dude - http://armory.warmane.com/api/character/Gotfai/Lordaeron/summary
@@ -75,3 +76,4 @@ Discord bot for them rawrs and strudels.
 23. ach4580 - All You Can Eat (10 player)
 24. ach4601 - Been Waiting a Long Time for This (10 player)
 25. ach4581 - Neck-Deep in Vile (10 player)
+

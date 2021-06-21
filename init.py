@@ -1,6 +1,7 @@
 # ⚪️ Standard lib
 import os
 import random
+import pprint
 import logging as log
 from dotenv import load_dotenv
 from sys import stdout
@@ -17,6 +18,7 @@ from scraper import scrapeCall
 
 
 # 🔴 Settings
+pp = pprint.PrettyPrinter(indent=4)
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN') # authentication token is stored in .env file locally
 POST_STARFALL_QUOTES = [
@@ -155,8 +157,27 @@ try:
                 embedVar.set_thumbnail(url='https://cdn.discordapp.com/emojis/{class_icon_id}.png'.format(class_icon_id=class_icons[api_response["class"]]))
                 await message.channel.send(embed=embedVar)
 
+
+        # !loot
+        if message.content.startswith('!loot'):
+
+            msg_data = {}
+ 
+            async for msg in client.get_channel(827234214982058045).history(limit=100): # As an example, I've set the limit to 10000
+                if msg.id != 827234534280921139:  # skip the description message
+                    #print(str(msg.created_at) + " - " + str(msg.id))
+                    message_whole = msg.content.replace("**", "").split("\n")
+                    msg_data.update({message_whole[0]: message_whole[1:]})
+            pp.pprint(msg_data)
+                        
+
     client.run(TOKEN)
 
 except Exception as e:
     log.error(e)
 
+"""
+data = data.append({'content': msg.content,
+'time': msg.created_at,
+'author': msg.author.name}, ignore_index=True)
+"""

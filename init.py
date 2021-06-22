@@ -5,6 +5,7 @@ import pprint
 import logging as log
 from dotenv import load_dotenv
 from sys import stdout
+from operator import itemgetter
 
 
 # ⚪️ Third party
@@ -30,9 +31,8 @@ POST_STARFALL_QUOTES = [
     ),
 ]
 ERROR_MESSAGES = [
-    "Are you retarded?",
+    "Are you a dumdum?",
     "Well played.",
-    "Daylight's burning.",
     "Kek.",
     "Did someone say starfol?"
 ]
@@ -164,7 +164,7 @@ try:
 
 
         # !loot
-        if message.content.startswith('!loot'):
+        if message.content.startswith('!loot '):
 
             rewarded_list = []
             replace_dict = {
@@ -176,12 +176,11 @@ try:
                 "Marks:":"Mark:",
                 " (trinket)":""
             } 
-            
  
             async for msg in client.get_channel(827234214982058045).history(limit=100): # As an example, I've set the limit to 10000
                 if msg.id != 827234534280921139:  # skip the description message
 
-                    message_whole = msg.content  # get rid of bold and split message into rows
+                    message_whole = msg.content
                     for replace_key in replace_dict.keys():  # replace all strings as in the dict above
                         message_whole = message_whole.replace(replace_key, replace_dict[replace_key])
                     message_whole = message_whole.split("\n")  # split message into list of rows
@@ -191,7 +190,7 @@ try:
                     msg_date = message_whole[0].split(" ")  # split date to 2 elements
                     msg_date[1] = month_num(msg_date[1])  # convert month to number
                     msg_date[0] = msg_date[0].replace("st", "").replace("th", "").replace("nd", "").replace("rd", "").zfill(2)  # remove affixes and fill zero in front if needed
-                    msg_date = "/".join(reversed(msg_date))  # first row is date row
+                    msg_date = "".join(reversed(msg_date))  # join month and day in reversed order, so that you can sort by month and day
 
                     # items
                     msg_items = message_whole[1:]  # separate items rows from date row
@@ -207,9 +206,60 @@ try:
                             else:
                                 rewarded_list.append([msg_date, item_name, person])
 
-        # fucking hell finally a list
-        pp.pprint(rewarded_list)
-                        
+            # fucking hell finally a list
+            #pp.pprint(rewarded_list)
+
+
+            # do actions related ot the query
+            query = message.content.split(" ", 1)[1]  # get rid of "!loot" for query
+
+            if query[0:4] == "item":  # if first 4 characters are "item"
+                query = query.split(" ", 1)[1]  # cut off first word (it is surely "item/items")
+                log.info("{nickname} queried item info for '{item}'".format(nickname = message.author.display_name, item=query))
+                await message.channel.send("Doesn't work yet.")
+
+            else:  # if it is not for item, i.e. is for character(s)
+                output = []
+                loot_counter = {}
+                output_footer = []
+                nicknames = query.replace(","," ").replace("  ", " ").split(" ")
+                nicknames = [i.capitalize() for i in nicknames]  # strip whitespaces around nicknames and capitalize them
+                log.info("{nickname} queried player loot info for '{item}'".format(nickname = message.author.display_name, item=query))
+
+                # roll through the queried nicknames
+                for nickname in nicknames:
+                    for rewarded_row in rewarded_list:  # roll through rewarded 
+                        if rewarded_row[2] == nickname:  # is 3rd value of the rewarded list's row is equal to nickname?
+                            if nickname not in loot_counter:
+                                loot_counter[nickname] = 0
+                            loot_counter[nickname] += 1
+                            output.append(rewarded_row)
+
+                output = sorted(output, key=itemgetter(0), reverse=True)
+                #pp.pprint(output)
+
+                # output the collected data to a embed
+                description = "Coucilled loot for {}.".format(", ".join(nicknames))  # top description row of embed
+                embedVar = discord.Embed(description=description, color=0xdab022)  # settings of embed
+                for output_row in output:  # iterate through the prepared list od rewarded items
+                    output_row[0] = output_row[0][2:4] + "/" + output_row[0][0:2]  # prepare date to be DD/MM
+                    output_row[2] = "**{}**".format(output_row[2])  # make item name t h i c c
+                    output_row[1] = output_row[1].replace(" heroic", " **HC**").replace(" Heroic", " **HC**")  # replace Heroic with HC
+
+                output_dates = "\n".join([item[0] for item in output])  # join all date cells into one string separated by \n
+                output_nicknames = "\n".join([item[2] for item in output])  # as above, but for nicknames
+                output_items = "\n".join([item[1] for item in output])  # as above by for item names
+                for counter_nick, counter_count in loot_counter.items():  # iterate through the counter items and prepare footer items
+                    output_footer.append("{} ({})".format(counter_nick, counter_count))
+                output_footer = "⠀•⠀".join(output_footer)  # split footer items by a dot
+
+                # add joined fields to the embed output, add foter and print to channel
+                embedVar.add_field(name="\u200b", value=output_dates, inline=True)
+                embedVar.add_field(name="\u200b", value=output_nicknames, inline=True)
+                embedVar.add_field(name="\u200b", value=output_items, inline=True)
+                embedVar.set_footer(text=output_footer)
+                await message.channel.send(embed=embedVar)
+
 
     client.run(TOKEN)
 

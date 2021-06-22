@@ -36,6 +36,11 @@ ERROR_MESSAGES = [
     "Kek.",
     "Did someone say starfol?"
 ]
+def month_num(month):
+    m = {'jan':"01",'feb':"02",'mar':"03",'apr':"04",'may':"05",'jun':"06",'jul':"07",'aug':"08",'sep':"09",'oct':"10",'nov':"11",'dec':"12"}
+    s = month.strip()[:3].lower()
+    out = m[s]
+    return out
 
 ##  logger config
 log.basicConfig(
@@ -161,14 +166,49 @@ try:
         # !loot
         if message.content.startswith('!loot'):
 
-            msg_data = {}
+            rewarded_list = []
+            replace_dict = {
+                "**":"", 
+                "  ":" ",
+                " (offhand)":"",
+                " (OS)":"",
+                "- ":": ",
+                "Marks:":"Mark:",
+                " (trinket)":""
+            } 
+            
  
             async for msg in client.get_channel(827234214982058045).history(limit=100): # As an example, I've set the limit to 10000
                 if msg.id != 827234534280921139:  # skip the description message
-                    #print(str(msg.created_at) + " - " + str(msg.id))
-                    message_whole = msg.content.replace("**", "").split("\n")
-                    msg_data.update({message_whole[0]: message_whole[1:]})
-            pp.pprint(msg_data)
+
+                    message_whole = msg.content  # get rid of bold and split message into rows
+                    for replace_key in replace_dict.keys():  # replace all strings as in the dict above
+                        message_whole = message_whole.replace(replace_key, replace_dict[replace_key])
+                    message_whole = message_whole.split("\n")  # split message into list of rows
+                    message_whole = [i.strip() for i in message_whole]  # strip front/back whitespaces in each row
+
+                    # date
+                    msg_date = message_whole[0].split(" ")  # split date to 2 elements
+                    msg_date[1] = month_num(msg_date[1])  # convert month to number
+                    msg_date[0] = msg_date[0].replace("st", "").replace("th", "").replace("nd", "").replace("rd", "").zfill(2)  # remove affixes and fill zero in front if needed
+                    msg_date = "/".join(reversed(msg_date))  # first row is date row
+
+                    # items
+                    msg_items = message_whole[1:]  # separate items rows from date row
+                    for item in msg_items:  # roll through all items in this message
+                        item_data = item.split(": ")  # split by ": " to get item name separated
+                        item_name = item_data[0]  # get the item name
+                        item_persons = item_data[1].replace(" / ", ", ").replace(" & ", ", ").split(", ")  # divide persons by ", "
+                        for person in item_persons:  # roll through all persons
+                            if "(x2)" in person:  # if given person name has (x2)
+                                person = person.replace(" (x2)", "")  # remove " (x2)" from the person's name
+                                rewarded_list.append([msg_date, item_name, person])
+                                rewarded_list.append([msg_date, item_name, person])
+                            else:
+                                rewarded_list.append([msg_date, item_name, person])
+
+        # fucking hell finally a list
+        pp.pprint(rewarded_list)
                         
 
     client.run(TOKEN)

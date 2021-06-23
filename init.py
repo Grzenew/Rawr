@@ -3,9 +3,9 @@ import os
 import random
 import pprint
 import logging as log
-from dotenv import load_dotenv
 from sys import stdout
 from operator import itemgetter
+import configparser
 
 
 # ⚪️ Third party
@@ -20,8 +20,6 @@ from scraper import scrapeCall
 
 # 🔴 Settings
 pp = pprint.PrettyPrinter(indent=4)
-load_dotenv()
-TOKEN = os.getenv('DISCORD_TOKEN') # authentication token is stored in .env file locally
 POST_STARFALL_QUOTES = [
     'Bestworldx has no mana for DI! ☄️☄️☄️',
     'Dcarl has no SIMBOLS DE DIVINIDAD! ☄️☄️☄️',
@@ -50,6 +48,14 @@ log.basicConfig(
     datefmt='[%Y/%m/%d %H:%M:%S]',
     level=log.INFO)
 log.getLogger().addHandler(log.StreamHandler(stdout))
+
+# load config from local file
+config = configparser.ConfigParser()
+config.readfp(open(r'.config'))
+#config.readfp(open(r'/home/pi/.config'))
+TOKEN = config.get('settings', 'token')
+LOG_PATH = config.get('settings', 'logPath')
+
 
 # 🟢 Exec
 try:
@@ -123,7 +129,7 @@ try:
         # !who keyword
         if message.content.startswith('!who '):
             query = message.content.split()[-1].capitalize()
-            log.error(query)
+            log.info("{nickname} queried character info for '{query}'".format(nickname = message.author.display_name, query=query))
             api_response = apiCall("character", query)
             if api_response == "doesnt exist":  # if given thing doesnt exist in db
                 await message.channel.send(random.choice(ERROR_MESSAGES) +" " + query + " does not exist.")

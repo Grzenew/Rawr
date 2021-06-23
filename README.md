@@ -14,6 +14,7 @@ Discord bot for them rawrs and strudels.
 - Starfall
 - !who nickname
 - !guild Guild Name
+- !loot nick, nick nick
 
 ## Achievements
 1. 15042 - ICC25

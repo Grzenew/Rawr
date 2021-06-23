@@ -13,8 +13,7 @@ log.basicConfig(
     filemode='a', 
     format='%(asctime)s %(levelname).4s (%(lineno).3s %(funcName)s)  %(message)s', 
     datefmt='[%Y/%m/%d %H:%M:%S]',
-    level=log.INFO)
-log.getLogger().addHandler(log.StreamHandler(stdout))    
+    level=log.INFO)  
 
 
 #  Exec ——————————————————————————————————————————————————————————————————————————————————————————

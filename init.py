@@ -3,9 +3,22 @@ import os
 import random
 import pprint
 import logging as log
-from sys import stdout
+from sys import stdout, exit
 from operator import itemgetter
 import configparser
+import psutil
+
+# check if script is already running, print to output
+print("Attempting to start...")
+def is_running(script):
+    for q in psutil.process_iter():
+        if q.name().startswith('python'):
+            if len(q.cmdline())>1 and script in q.cmdline()[1] and q.pid !=os.getpid():
+                exit("Bot is already running via '{}', aborting the start...".format(script))
+                return True
+    return False
+if not is_running("init.py"):
+	print("Script is not running, starting...")
 
 
 # ⚪️ Third party
@@ -40,21 +53,23 @@ def month_num(month):
     out = m[s]
     return out
 
+# load config from local file
+config = configparser.ConfigParser()
+#config.readfp(open(r'.config'))  # local
+config.readfp(open(r'/home/pi/.config'))  # production
+TOKEN = config.get('settings', 'token')
+LOG_PATH = config.get('settings', 'logPath')
+
 ##  logger config
 log.basicConfig(
-    filename='rawr.log', 
+    filename=LOG_PATH, 
     filemode='a', 
     format='%(asctime)s %(levelname).4s (%(lineno).3s %(funcName)s)  %(message)s', 
     datefmt='[%Y/%m/%d %H:%M:%S]',
     level=log.INFO)
 log.getLogger().addHandler(log.StreamHandler(stdout))
 
-# load config from local file
-config = configparser.ConfigParser()
-config.readfp(open(r'.config'))
-#config.readfp(open(r'/home/pi/.config'))
-TOKEN = config.get('settings', 'token')
-LOG_PATH = config.get('settings', 'logPath')
+log.info('Bot initiated, settings loaded.')
 
 
 # 🟢 Exec
@@ -271,9 +286,3 @@ try:
 
 except Exception as e:
     log.error(e)
-
-"""
-data = data.append({'content': msg.content,
-'time': msg.created_at,
-'author': msg.author.name}, ignore_index=True)
-"""

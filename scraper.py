@@ -1,9 +1,20 @@
 #  Third party modules ———————————————————————————————————————————————————————————————————————————
 import requests
 import html_to_json
+import mysql.connector as mysql
+import logging as log
 
 
-# Exec
+# Settings ———————————————————————————————————————————————————————————————————————————————————————
+db = mysql.connect(
+    host = "localhost",
+    user = "user",
+    passwd = "icoteraz2010",
+	database="items"
+)
+
+
+# Exec ————————————————————————————————————————————————————————————————————————————————————————————
 def scrapeCall(CATEGORY, QUERY, REALM="Lordaeron"):
 
     ACHI_DATA = {}
@@ -123,7 +134,39 @@ def scrapeCall(CATEGORY, QUERY, REALM="Lordaeron"):
                         if instance_data['name'][-6:] == "heroic" and boss["td"][0]["_value"][:6] == "Fester" and ACHI_DATA[instance_data['name']] == "0": # if its heroic and boss is Fester and there's no achi for lower ICC
                             counter += 1  # add 1 since if someone killed Fester, they most probably also killed Marrowgar
                 ANSWER[instance_data['name']] = str(counter)  # store kill count in answer
+				
+				
+
+        # scrape items
+        url = BASE_URL + "/profile"
+        response = requests.get(url)
+        response_json = html_to_json.convert(response.text.encode().decode('unicode_escape').replace("\\/","/").replace("\n",""))
+        item_data = response_json["html"][0]["body"][0]["div"][2]["div"][4]["div"][0]["div"][1]["div"][0]["div"][1]["div"][2]["div"][0]["div"][0]["div"][:3]  # a long ptath to reach the item data
+        
+        item_ids = []
+        item_level_avg = 0
+
+        for items_side in item_data:  # iterate through side (left, right, bottom - as visibel in webpage)
+            for item in items_side["div"][:-1]:  # get all items except last, which is useless
+                if "rel" in item["div"][0]["a"][0]["_attributes"]:  # if rel is here, then an item is here
+                    item_data = item["div"][0]["a"][0]["_attributes"]["rel"][0]  # get the item data
+                    item_data = item_data.replace("item=","").replace("ench=","").replace("gems=","").split("&")  # remove unnecessary words and split by & into list of attributes - id, ench id, gems id's
+                    item_ids.append(item_data[0])  # add to the list
+                else:
+                    print("No " + item["div"][0]["_attributes"]["data-tooltip"])
+
+        dbcursor = db.cursor()
+        sql_query = "SELECT ItemLevel FROM item_template WHERE ItemLevel > 1 AND entry IN ({item_ids})".format(item_ids=", ".join(item_ids))  # get all item levels from the SQL DB
+        dbcursor.execute(sql_query)
+        item_levels_all = dbcursor.fetchall()
+        for item_level in item_levels_all:  # iterate through the items
+            item_level_avg += item_level[0]  # add each item's ilvl
+		
+        item_level_avg = round(item_level_avg/14)  # divide by 14 and round 
+        ANSWER["ilvl"] = item_level_avg
 
 
-    print("Scraped data for " + QUERY)            
+    print("Scraped data for " + QUERY)
     return ANSWER
+
+# scrapeCall("character","Bestworldx")

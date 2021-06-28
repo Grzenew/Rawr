@@ -55,8 +55,8 @@ def month_num(month):
 
 # load config from local file
 config = configparser.ConfigParser()
-config.readfp(open(r'.config'))  # local
-#config.readfp(open(r'/home/pi/.config'))  # production
+#config.readfp(open(r'.config'))  # local
+config.readfp(open(r'/home/pi/.config'))  # production
 TOKEN = config.get('settings', 'token')
 LOG_PATH = config.get('settings', 'logPath')
 
@@ -170,16 +170,27 @@ try:
                 description = api_response["specs"]  # descriprion - "Guild • Spec/Spec"
                 if api_response["guild"] != "":
                     description = api_response["guild"] + " • " + description
+                    description += "\nItem level: " + str(scrape_response["ilvl"])
 
                 embedVar = discord.Embed(title=title, description=description, url='http://armory.warmane.com/character/{nick}/Lordaeron/achievements'.format(nick=query), color=0xdab022)
                 if int(scrape_response["ICC10 normal"]) > 0:
                     embedVar.add_field(name="ICC10", value=scrape_response["ICC10 normal"] + "/12")
-                if int(scrape_response["ICC25 normal"]) > 0:
-                    embedVar.add_field(name="ICC25", value=scrape_response["ICC25 normal"] + "/12", inline=True)
+                else:
+                    embedVar.add_field(name="\u200b", value="\u200b", inline=True)
                 if int(scrape_response["ICC10 heroic"]) > 0:
                     embedVar.add_field(name="ICC10 Heroic", value=scrape_response["ICC10 heroic"] + "/12", inline=True)
+                else:
+                    embedVar.add_field(name="\u200b", value="\u200b", inline=True)
+                embedVar.add_field(name="\u200b", value="\u200b", inline=True)
+                if int(scrape_response["ICC25 normal"]) > 0:
+                    embedVar.add_field(name="ICC25", value=scrape_response["ICC25 normal"] + "/12", inline=True)
+                else:
+                    embedVar.add_field(name="\u200b", value="\u200b", inline=True)
                 if int(scrape_response["ICC25 heroic"]) > 0:
                     embedVar.add_field(name="ICC25 Heroic", value=scrape_response["ICC25 heroic"] + "/12", inline=True)
+                else:
+                    embedVar.add_field(name="\u200b", value="\u200b", inline=True)
+                embedVar.add_field(name="\u200b", value="\u200b", inline=True)
                 embedVar.set_thumbnail(url='https://cdn.discordapp.com/emojis/{class_icon_id}.png'.format(class_icon_id=class_icons[api_response["class"]]))
                 await message.channel.send(embed=embedVar)
 

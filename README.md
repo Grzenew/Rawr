@@ -1,5 +1,5 @@
 # Rawr
-v1.3 
+v1.4 
 Discord bot for them rawrs and strudels.
 
 * Discord api   https://discordpy.readthedocs.io/en/stable/api.html

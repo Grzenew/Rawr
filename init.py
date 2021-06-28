@@ -55,8 +55,8 @@ def month_num(month):
 
 # load config from local file
 config = configparser.ConfigParser()
-#config.readfp(open(r'.config'))  # local
-config.readfp(open(r'/home/pi/.config'))  # production
+config.readfp(open(r'.config'))  # local
+#config.readfp(open(r'/home/pi/.config'))  # production
 TOKEN = config.get('settings', 'token')
 LOG_PATH = config.get('settings', 'logPath')
 
@@ -172,14 +172,14 @@ try:
                     description = api_response["guild"] + " • " + description
 
                 embedVar = discord.Embed(title=title, description=description, url='http://armory.warmane.com/character/{nick}/Lordaeron/achievements'.format(nick=query), color=0xdab022)
-                if int(scrape_response["ICC10"]["score_nm"]) > 0:
-                    embedVar.add_field(name="ICC10", value=scrape_response["ICC10"]["score_nm"] + "/12")
-                if int(scrape_response["ICC25"]["score_nm"]) > 0:
-                    embedVar.add_field(name="ICC25", value=scrape_response["ICC25"]["score_nm"] + "/12", inline=True)
-                if int(scrape_response["ICC10"]["score_hc"]) > 0:
-                    embedVar.add_field(name="ICC10 Heroic", value=scrape_response["ICC10"]["score_hc"] + "/12", inline=True)
-                if int(scrape_response["ICC25"]["score_hc"]) > 0:
-                    embedVar.add_field(name="ICC25 Heroic", value=scrape_response["ICC25"]["score_hc"] + "/12", inline=True)
+                if int(scrape_response["ICC10 normal"]) > 0:
+                    embedVar.add_field(name="ICC10", value=scrape_response["ICC10 normal"] + "/12")
+                if int(scrape_response["ICC25 normal"]) > 0:
+                    embedVar.add_field(name="ICC25", value=scrape_response["ICC25 normal"] + "/12", inline=True)
+                if int(scrape_response["ICC10 heroic"]) > 0:
+                    embedVar.add_field(name="ICC10 Heroic", value=scrape_response["ICC10 heroic"] + "/12", inline=True)
+                if int(scrape_response["ICC25 heroic"]) > 0:
+                    embedVar.add_field(name="ICC25 Heroic", value=scrape_response["ICC25 heroic"] + "/12", inline=True)
                 embedVar.set_thumbnail(url='https://cdn.discordapp.com/emojis/{class_icon_id}.png'.format(class_icon_id=class_icons[api_response["class"]]))
                 await message.channel.send(embed=embedVar)
 
@@ -196,7 +196,10 @@ try:
                 "- ":": ",
                 "Marks:":"Mark:",
                 " (trinket)":""
-            } 
+            }
+            # manually add two rows for data from first message
+            rewarded_list.append(["0401", "Glowing Twilight Scale", "Frejr"])
+            rewarded_list.append(["0401", "Charred Twilight Scale", "Gotfai"])
  
             async for msg in client.get_channel(827234214982058045).history(limit=100): # As an example, I've set the limit to 10000
                 if msg.id != 827234534280921139:  # skip the description message
@@ -226,9 +229,6 @@ try:
                                 rewarded_list.append([msg_date, item_name, person])
                             else:
                                 rewarded_list.append([msg_date, item_name, person])
-
-            # fucking hell finally a list
-            #pp.pprint(rewarded_list)
 
 
             # do actions related ot the query

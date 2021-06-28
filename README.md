@@ -1,4 +1,5 @@
 # Rawr
+v1.3 
 Discord bot for them rawrs and strudels.
 
 * Discord api   https://discordpy.readthedocs.io/en/stable/api.html
@@ -78,3 +79,74 @@ Discord bot for them rawrs and strudels.
 24. ach4601 - Been Waiting a Long Time for This (10 player)
 25. ach4581 - Neck-Deep in Vile (10 player)
 
+### Fall of the Lich King Statistics
+0. Bronjahm kills (Forge of Souls) - 40
+1. Bronjahm kills (Heroic Forge of Souls) - 40
+2. Devourer of Souls kills (Forge of Souls) - 40
+3. Devourer of Souls kills (Heroic Forge of Souls) - 40
+4. Forgemaster Garfrost kills (Pit of Saron) - 44
+5. Forgemaster Garfrost kills (Heroic Pit of Saron) - 44
+6. Ick and Krick kills (Pit of Saron) - 43
+7. Ick and Krick kills (Heroic Pit of Saron) - 43
+8. Scourgelord Tyrannus kills (Pit of Saron) - 43
+9. Scourgelord Tyrannus kills (Heroic Pit of Saron) - 43
+10. Falric kills (Halls of Reflection) - 35
+11. Falric kills (Heroic Halls of Reflection) - 35
+12. Marwyn kills (Halls of Reflection) - 33
+13. Marwyn kills (Heroic Halls of Reflection) - 33
+14. Lich King escapes (Halls of Reflection) - 32
+15. Lich King escapes (Heroic Halls of Reflection) - 24
+16. Lord Marrowgar kills (Icecrown 10 player) - 46
+17. Lord Marrowgar kills (Heroic Icecrown 10 player) - 46
+18. Lord Marrowgar kills (Icecrown 25 player) - 46
+19. Lord Marrowgar kills (Heroic Icecrown 25 player) - 46
+20. Lady Deathwhisper kills (Icecrown 10 player) - 46
+21. Lady Deathwhisper kills (Heroic Icecrown 10 player) - 46
+22. Lady Deathwhisper kills (Icecrown 25 player) - 46
+23. Lady Deathwhisper kills (Heroic Icecrown 25 player) - 46
+24. Gunship Battle victories (Icecrown 10 player) - 22
+25. Gunship Battle victories (Heroic Icecrown 10 player) - 22
+26. Gunship Battle victories (Icecrown 25 player) - 24
+27. Gunship Battle victories (Heroic Icecrown 25 player) - 22
+28. Deathbringer kills (Icecrown 10 player) - 20
+29. Deathbringer kills (Heroic Icecrown 10 player) - 22
+30. Deathbringer kills (Icecrown 25 player) - 13
+31. Deathbringer kills (Heroic Icecrown 25 player) - 10
+32. Festergut kills (Icecrown 10 player) - 18
+33. Festergut kills (Heroic Icecrown 10 player) - 3
+34. Festergut kills (Icecrown 25 player) - 16
+35. Festergut kills (Heroic Icecrown 25 player) - 3
+36. Rotface kills (Icecrown 10 player) - 19
+37. Rotface kills (Heroic Icecrown 10 player) - 7
+38. Rotface kills (Icecrown 25 player) - 21
+39. Rotface kills (Heroic Icecrown 25 player) - 1
+40. Blood Prince Council kills (Icecrown 10 player) - 13
+41. Blood Prince Council kills (Heroic Icecrown 10 player) - 3
+42. Blood Prince Council kills (Icecrown 25 player) - 13
+43. Blood Prince Council kills (Heroic Icecrown 25 player) - 1
+44. Valithria Dreamwalker rescues (Icecrown 10 player) - 15
+45. Valithria Dreamwalker rescues (Heroic Icecrown 10 player) - 2
+46. Valithria Dreamwalker rescues (Icecrown 25 player) - 17
+47. Valithria Dreamwalker rescues (Heroic Icecrown 25 player) - 4
+48. Professor Putricide kills (Icecrown 10 player) - 14
+49. Professor Putricide kills (Heroic Icecrown 10 player) - 0
+50. Professor Putricide kills (Icecrown 25 player) - 14
+51. Professor Putricide kills (Heroic Icecrown 25 player) - 0
+52. Blood Queen Lana'thel kills (Icecrown 10 player) - 10
+53. Blood Queen Lana'thel kills (Heroic Icecrown 10 player) - 0
+54. Blood Queen Lana'thel kills (Icecrown 25 player) - 8
+55. Blood Queen Lana'thel kills (Heroic Icecrown 25 player) - 0
+56. Sindragosa kills (Icecrown 10 player) - 9
+57. Sindragosa kills (Heroic Icecrown 10 player) - 0
+58. Sindragosa kills (Icecrown 25 player) - 8
+59. Sindragosa kills (Heroic Icecrown 25 player) - 0
+60. Victories over the Lich King (Icecrown 10 player) - 5
+61. Victories over the Lich King (Heroic Icecrown 10 player) - 0
+62. Victories over the Lich King (Icecrown 25 player) - 6
+63. Victories over the Lich King (Heroic Icecrown 25 player) - 0
+64. Toravon the Ice Watcher kills (Wintergrasp 10 player) - 33
+65. Toravon the Ice Watcher kills (Wintergrasp 25 player) - 33
+66. Halion kills (Ruby Sanctum 25 player) - 0
+67. Halion kills (Ruby Sanctum 10 player) - 0
+68. Halion kills (Heroic Ruby Sanctum 10 player) - 0
+69. Halion kills (Heroic Ruby Sanctum 25 player) - 0

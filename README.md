@@ -1,5 +1,5 @@
 # Rawr
-v1.4 
+v1.5
 Discord bot for them rawrs and strudels.
 
 * Discord api   https://discordpy.readthedocs.io/en/stable/api.html
@@ -16,6 +16,16 @@ Discord bot for them rawrs and strudels.
 - !who nickname
 - !guild Guild Name
 - !loot nick, nick nick
+
+## Changelog
+1.5 - gearscore calculation
+1.4.1 - new raid popup layout
+1.4 - gathering item data and ilvl from SQL; calculation of avg item iLvl
+1.3 - advanced raid stats
+1.2.1 - managing restarts, logging info
+1.2 - !loot command for characters
+1.1 - partial error catching
+1.0 - basic command testing (who, Starfall, tomb)
 
 ## Achievements
 1. 15042 - ICC25

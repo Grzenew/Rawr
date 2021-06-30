@@ -1,4 +1,5 @@
 # ⚪️ Standard lib
+from inspect import formatargvalues
 import os
 import random
 import pprint
@@ -140,6 +141,11 @@ try:
                 if "online_names_list" in response:
                     to_send = to_send[:-1] + ": " + response["online_names_list"]
             await message.channel.send(to_send)
+            
+        # !guild reboot
+        if message.content.startswith('!reboot me pls'):
+            print("{} initiated a reboot.".format(message.author))
+            os.system('sudo reboot')
 
         # !who keyword
         if message.content.startswith('!who '):
@@ -151,7 +157,11 @@ try:
             elif api_response == "error" or api_response == "":  # if there was another error
                 await message.channel.send("Something is wrong. <@661303805899440148>, heal me! Quickly!")
             else:  # if all is oke
-                scrape_response = scrapeCall("character", query)
+                if api_response["class"] == "Hunter":
+                    is_hunter = True
+                else:
+                    is_hunter = formatargvalues
+                scrape_response = scrapeCall("character", query, IS_HUNTER=is_hunter)
 
                 class_icons = {  # icons uploaded as emojis to my dev server, used for classes
                     "Mage": '855739857409146880', 
@@ -168,29 +178,24 @@ try:
 
                 title = query + " (" + api_response["level"] + ")"  # title - "Name (level)"
                 description = api_response["specs"]  # descriprion - "Guild • Spec/Spec"
+                icc_completion = ""
+
                 if api_response["guild"] != "":
-                    description = api_response["guild"] + " • " + description
-                    description += "\nItem level: " + str(scrape_response["ilvl"])
+                    description = api_response["guild"] + "  •  " + description
+                    description += "\nGS: {}  •  iLvl: {}".format(str(scrape_response["gs"]), str(scrape_response["ilvl"]))
 
                 embedVar = discord.Embed(title=title, description=description, url='http://armory.warmane.com/character/{nick}/Lordaeron/achievements'.format(nick=query), color=0xdab022)
                 if int(scrape_response["ICC10 normal"]) > 0:
-                    embedVar.add_field(name="ICC10", value=scrape_response["ICC10 normal"] + "/12")
-                else:
-                    embedVar.add_field(name="\u200b", value="\u200b", inline=True)
+                    icc_completion += "` {}/12 ` 10 \n".format(scrape_response["ICC10 normal"])
                 if int(scrape_response["ICC10 heroic"]) > 0:
-                    embedVar.add_field(name="ICC10 Heroic", value=scrape_response["ICC10 heroic"] + "/12", inline=True)
-                else:
-                    embedVar.add_field(name="\u200b", value="\u200b", inline=True)
-                embedVar.add_field(name="\u200b", value="\u200b", inline=True)
+                    icc_completion += "` {}/12 ` 10 HC \n".format(scrape_response["ICC10 heroic"])
                 if int(scrape_response["ICC25 normal"]) > 0:
-                    embedVar.add_field(name="ICC25", value=scrape_response["ICC25 normal"] + "/12", inline=True)
-                else:
-                    embedVar.add_field(name="\u200b", value="\u200b", inline=True)
+                    icc_completion += "` {}/12 ` 25 \n".format(scrape_response["ICC25 normal"])
                 if int(scrape_response["ICC25 heroic"]) > 0:
-                    embedVar.add_field(name="ICC25 Heroic", value=scrape_response["ICC25 heroic"] + "/12", inline=True)
-                else:
-                    embedVar.add_field(name="\u200b", value="\u200b", inline=True)
-                embedVar.add_field(name="\u200b", value="\u200b", inline=True)
+                    icc_completion += "` {}/12 ` 25 HC ".format(scrape_response["ICC25 heroic"])
+                if icc_completion != "":
+                    embedVar.add_field(name="Icecrown Citadel", value=icc_completion, inline=False)
+                #embedVar.add_field(name="\u200b", value="\u200b", inline=True)
                 embedVar.set_thumbnail(url='https://cdn.discordapp.com/emojis/{class_icon_id}.png'.format(class_icon_id=class_icons[api_response["class"]]))
                 await message.channel.send(embed=embedVar)
 

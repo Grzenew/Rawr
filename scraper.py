@@ -1,3 +1,6 @@
+# Item Types - https://trinitycore.atlassian.net/wiki/spaces/tc/pages/2130222/item+template
+
+
 #  Third party modules ———————————————————————————————————————————————————————————————————————————
 import requests
 import html_to_json
@@ -217,7 +220,6 @@ def scrapeCall(CATEGORY, QUERY, IS_HUNTER=False, REALM="Lordaeron"):
             item_enchanted = []
             item_list = {}
             item_slot = 0
-            item_level_avg = 0
             item_query_dict = {}
             item_list_final = {}
 
@@ -252,16 +254,19 @@ def scrapeCall(CATEGORY, QUERY, IS_HUNTER=False, REALM="Lordaeron"):
 
             # calculate GS
             gs_GearScore = 0
-            for item_list_single in item_list_final.items():
+            gs_TitanGrip = False
+
+            for item_list_single in sorted(item_list_final.items(), reverse=True):  # need to reverse the order so that script first checks if offhand is 2h (i.e. titan grip)
                 
                 # prepare
                 gs_QualityScale = 1
+                gs_Scale = 1.8618
                 gs_ItemSlot = item_list_single[0]
                 gs_ItemType = item_list_single[1][2]
                 gs_ItemLevel = item_list_single[1][0]
-                gs_Scale = 1.8618
                 gs_ItemRarity = item_list_single[1][1]
                 gs_Table = {}
+                gs_Name = item_list_single[1][3]
 
                 # estimate multipliers according to item rarity
                 if gs_ItemRarity == 5:  # legendary
@@ -283,6 +288,13 @@ def scrapeCall(CATEGORY, QUERY, IS_HUNTER=False, REALM="Lordaeron"):
                 # the main calculation
                 gs_GearScore_Item = math.floor(((gs_ItemLevel - gs_Table[gs_ItemRarity]["A"]) / gs_Table[gs_ItemRarity]["B"]) * ITEM_TYPES[gs_ItemType] * gs_Scale * gs_QualityScale)
 
+                # titans grip
+                if gs_ItemSlot == 17 and gs_ItemType == 17:  # if slot is 17 (offhand) and weapon type is 17 (2h)
+                    gs_TitanGrip = True  # remember that its titan grip so that main hand 2h also gets 50% reduced GS
+                    gs_GearScore_Item = gs_GearScore_Item * 0.5
+                if gs_TitanGrip and gs_ItemSlot == 16 and gs_ItemType == 17:  # if slot is 16 (mainhand) and weapon type is 17 (2h)
+                    gs_GearScore_Item = gs_GearScore_Item * 0.5
+
                 # for hunter only
                 if IS_HUNTER:  
                     if gs_ItemType == 13:  # one handed weapon
@@ -292,13 +304,14 @@ def scrapeCall(CATEGORY, QUERY, IS_HUNTER=False, REALM="Lordaeron"):
                     elif gs_ItemSlot == 18:  # ranged weapon
                         gs_GearScore_Item = math.floor(gs_GearScore_Item * 5.3224)
 
+
                 # if this item is enchantable and is not found in the 'enchanted' list
                 if gs_ItemSlot not in item_enchanted and gs_ItemType in ENCHANTABLE:
                     gs_EnchantPercent = ( math.floor((-2 * ( ITEM_TYPES[gs_ItemType]  )) * 100) / 100 )
                     gs_EnchantPercent = 1 + (gs_EnchantPercent/100)
                     gs_GearScore_Item = gs_EnchantPercent * gs_GearScore_Item
                     
-                #print(str(gs_ItemSlot) + ": " + gs_Name + " - " + str(gs_ItemType) + " - "+ str(gs_ItemID) + " - " + str(gs_GearScore_Item))
+                #print(str(gs_ItemSlot) + " " + str(gs_QualityScale) + ": " + gs_Name + " - type/slot:" + str(gs_ItemType) + "/" + str(gs_ItemSlot) + " - gs:" + str(gs_GearScore_Item) + " - grip?:" + str(gs_TitanGrip))
 
                 # add rounded GS to overall score
                 gs_GearScore += math.floor(gs_GearScore_Item)
@@ -316,4 +329,6 @@ def scrapeCall(CATEGORY, QUERY, IS_HUNTER=False, REALM="Lordaeron"):
 
 
 #scrapeCall("character","Frejr",True)
-#scrapeCall("character","Wolfspitz",True) # 5579
+#scrapeCall("character","Neunet",False) # 5855
+#scrapeCall("character","Kunefe",False) # 5867
+#scrapeCall("character","Myrmiidon",False) # 5517

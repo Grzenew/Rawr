@@ -1,5 +1,5 @@
 # Rawr
-v1.5
+v1.6
 Discord bot for them rawrs and strudels.
 
 * Discord api   https://discordpy.readthedocs.io/en/stable/api.html
@@ -18,6 +18,7 @@ Discord bot for them rawrs and strudels.
 - !loot nick, nick nick
 
 ## Changelog
+1.6 - GS fixes, loot layout fix, !who redesign
 1.5 - gearscore calculation
 1.4.1 - new raid popup layout
 1.4 - gathering item data and ilvl from SQL; calculation of avg item iLvl

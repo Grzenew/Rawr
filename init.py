@@ -1,5 +1,4 @@
 # ⚪️ Standard lib
-from inspect import formatargvalues
 import os
 import random
 import pprint
@@ -145,7 +144,12 @@ try:
         # !guild reboot
         if message.content.startswith('!reboot me pls'):
             print("{} initiated a reboot.".format(message.author))
-            os.system('sudo reboot')
+            if message.author.id == 661303805899440148:
+                await client.add_reaction(message, "👍")   
+                await client.change_presence(status=discord.Status.idle)  
+                os.system('sudo reboot')                
+            else:
+                await message.channel.send("Only daddy can rebooty me.")               
 
         # !who keyword
         if message.content.startswith('!who '):
@@ -160,10 +164,10 @@ try:
                 if api_response["class"] == "Hunter":
                     is_hunter = True
                 else:
-                    is_hunter = formatargvalues
-                scrape_response = scrapeCall("character", query, IS_HUNTER=is_hunter)
+                    is_hunter = False
+                scrape_response = scrapeCall("character", query, IS_HUNTER=is_hunter)            
 
-                class_icons = {  # icons uploaded as emojis to my dev server, used for classes
+                icons = {  # icons uploaded as emojis to my dev server, used for classes
                     "Mage": '855739857409146880', 
                     "Death Knight": '855748451677634560',
                     "Hunter": '855748451623370762',
@@ -173,30 +177,31 @@ try:
                     "Rogue": '579532030086217748',
                     "Shaman": '855748451643031553',
                     "Warlock": '855748451672260608',
-                    "Warrior": '855748451644211200'
+                    "Warrior": '855748451644211200',
+                    "Alliance": '860191290503069697',
+                    "Horde": '860191290829570068'
                 }
 
-                title = query + " (" + api_response["level"] + ")"  # title - "Name (level)"
-                description = api_response["specs"]  # descriprion - "Guild • Spec/Spec"
+                title = "{nickname} ({level})".format( level=api_response["level"], nickname=query)  # title - "Name (level)"
+                description = "<:class{classname}:{icon}> {specs}".format(icon=icons[api_response["class"]], specs=api_response["specs"], classname=api_response["class"].lower())  # descriprion - "Guild • Spec/Spec"
+                description += "\n<:{faction}:{icon}> {guild}".format(faction=api_response["faction"], icon=icons[api_response["faction"]], guild=api_response["guild"])  # descriprion - "Guild • Spec/Spec"
+                description += "\n<:Gearscore:861705201362796594> {}".format(str(scrape_response["gs"]))
+                description += "\n<:AchievementPoints:861706248884584459> {}".format(api_response["ap"])
                 icc_completion = ""
 
-                if api_response["guild"] != "":
-                    description = api_response["guild"] + "  •  " + description
-                    description += "\nGS: {}  •  iLvl: {}".format(str(scrape_response["gs"]), str(scrape_response["ilvl"]))
-
-                embedVar = discord.Embed(title=title, description=description, url='http://armory.warmane.com/character/{nick}/Lordaeron/achievements'.format(nick=query), color=0xdab022)
+                embedVar = discord.Embed(title=title, description=description, url='http://armory.warmane.com/character/{nick}/Lordaeron/profile'.format(nick=query), color=0xdab022)
                 if int(scrape_response["ICC10 normal"]) > 0:
-                    icc_completion += "` {}/12 ` 10 \n".format(scrape_response["ICC10 normal"])
+                    icc_completion += "` {}/12 ` 10-man \n".format(scrape_response["ICC10 normal"])
                 if int(scrape_response["ICC10 heroic"]) > 0:
-                    icc_completion += "` {}/12 ` 10 HC \n".format(scrape_response["ICC10 heroic"])
+                    icc_completion += "` {}/12 ` 10-man HC \n".format(scrape_response["ICC10 heroic"])
                 if int(scrape_response["ICC25 normal"]) > 0:
-                    icc_completion += "` {}/12 ` 25 \n".format(scrape_response["ICC25 normal"])
+                    icc_completion += "` {}/12 ` 25-man \n".format(scrape_response["ICC25 normal"])
                 if int(scrape_response["ICC25 heroic"]) > 0:
-                    icc_completion += "` {}/12 ` 25 HC ".format(scrape_response["ICC25 heroic"])
+                    icc_completion += "` {}/12 ` 25-man HC ".format(scrape_response["ICC25 heroic"])
                 if icc_completion != "":
                     embedVar.add_field(name="Icecrown Citadel", value=icc_completion, inline=False)
                 #embedVar.add_field(name="\u200b", value="\u200b", inline=True)
-                embedVar.set_thumbnail(url='https://cdn.discordapp.com/emojis/{class_icon_id}.png'.format(class_icon_id=class_icons[api_response["class"]]))
+                embedVar.set_thumbnail(url='https://cdn.discordapp.com/emojis/{class_icon_id}.png'.format(class_icon_id=icons[api_response["class"]]))
                 await message.channel.send(embed=embedVar)
 
 
@@ -257,6 +262,7 @@ try:
 
             else:  # if it is not for item, i.e. is for character(s)
                 output = []
+                output_rows = ""
                 loot_counter = {}
                 output_footer = []
                 nicknames = query.replace(","," ").replace("  ", " ").split(" ")
@@ -276,24 +282,20 @@ try:
                 #pp.pprint(output)
 
                 # output the collected data to a embed
-                description = "Coucilled loot for {}.".format(", ".join(nicknames))  # top description row of embed
-                embedVar = discord.Embed(description=description, color=0xdab022)  # settings of embed
+                #description = "Coucilled loot for {}.".format(", ".join(nicknames))  # top description row of embed
+                embedVar = discord.Embed(description="", color=0xdab022)  # settings of embed
                 for output_row in output:  # iterate through the prepared list od rewarded items
                     output_row[0] = output_row[0][2:4] + "/" + output_row[0][0:2]  # prepare date to be DD/MM
                     output_row[2] = "**{}**".format(output_row[2])  # make item name t h i c c
                     output_row[1] = output_row[1].replace(" heroic", " **HC**").replace(" Heroic", " **HC**")  # replace Heroic with HC
+                    output_rows += output_row[0] + " " + output_row[2] +  " " + output_row[1] + "\n"
 
-                output_dates = "\n".join([item[0] for item in output])  # join all date cells into one string separated by \n
-                output_nicknames = "\n".join([item[2] for item in output])  # as above, but for nicknames
-                output_items = "\n".join([item[1] for item in output])  # as above by for item names
                 for counter_nick, counter_count in loot_counter.items():  # iterate through the counter items and prepare footer items
                     output_footer.append("{} ({})".format(counter_nick, counter_count))
                 output_footer = "⠀•⠀".join(output_footer)  # split footer items by a dot
 
                 # add joined fields to the embed output, add foter and print to channel
-                embedVar.add_field(name="\u200b", value=output_dates, inline=True)
-                embedVar.add_field(name="\u200b", value=output_nicknames, inline=True)
-                embedVar.add_field(name="\u200b", value=output_items, inline=True)
+                embedVar.add_field(name="Coucilled loot for {}.".format(", ".join(nicknames)), value=output_rows, inline=True)
                 embedVar.set_footer(text=output_footer)
                 await message.channel.send(embed=embedVar)
 
@@ -301,4 +303,5 @@ try:
     client.run(TOKEN)
 
 except Exception as e:
+    print(e)
     log.error(e)

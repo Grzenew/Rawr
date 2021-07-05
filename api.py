@@ -48,10 +48,15 @@ def apiCall(CATEGORY, QUERY, REALM="Lordaeron"):
                 if CATEGORY == "character":
 
                     ### Save the data into a nice dictionary object
+                    if result_array["guild"] == "":
+                        result_array["guild"] = "(no guild)"
+
                     ANSWER = {
                         "level": result_array["level"],
                         "class": result_array["class"],
                         "guild": result_array["guild"],
+                        "faction": result_array["faction"],
+                        "ap": result_array["achievementpoints"],                        
                         "specs": "/".join(str(x["tree"]) for x in result_array["talents"]),
                         "race": result_array["race"]
                     }

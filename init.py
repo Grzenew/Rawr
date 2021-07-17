@@ -1,37 +1,22 @@
-# ⚪️ Standard lib
+# Standard lib ———————————————————————————————————————————————————————————————————————————
 import os
 import random
 import pprint
-import logging as log
-from sys import stdout, exit
-from operator import itemgetter
-import configparser
 import psutil
+from configparser import ConfigParser
+from sys import exit
+from operator import itemgetter
+from datetime import datetime
 
-# check if script is already running, print to output
-print("Attempting to start...")
-def is_running(script):
-    for q in psutil.process_iter():
-        if q.name().startswith('python'):
-            if len(q.cmdline())>1 and script in q.cmdline()[1] and q.pid !=os.getpid():
-                exit("Bot is already running via '{}', aborting the start...".format(script))
-                return True
-    return False
-if not is_running("init.py"):
-	print("Script is not running, starting...")
-
-
-# ⚪️ Third party
+# Third party ———————————————————————————————————————————————————————————————————————————
 import asyncio
 import discord
 
-# Internal
+# Internal ——————————————————————————————————————————————————————————————————————————————
 from api import apiCall
 from scraper import scrapeCall
 
-
-
-# 🔴 Settings
+# Settings ——————————————————————————————————————————————————————————————————————————————
 pp = pprint.PrettyPrinter(indent=4)
 POST_STARFALL_QUOTES = [
     'Bestworldx has no mana for DI! ☄️☄️☄️',
@@ -45,42 +30,54 @@ ERROR_MESSAGES = [
     "Are you a dumdum?",
     "Well played.",
     "Kek.",
-    "Did someone say starfol?"
+    "Wat."
 ]
+
+# load config
+config = ConfigParser()
+config.read(r'/home/pi/.config')
+TOKEN = config.get('settings', 'token')
+DB_PWD = config.get('settings', 'db_pwd')
+
+
+# Functions —————————————————————————————————————————————————————————————————————————————
+# return month number for given three letter month name
 def month_num(month):
     m = {'jan':"01",'feb':"02",'mar':"03",'apr':"04",'may':"05",'jun':"06",'jul':"07",'aug':"08",'sep':"09",'oct':"10",'nov':"11",'dec':"12"}
     s = month.strip()[:3].lower()
     out = m[s]
     return out
 
-# load config from local file
-config = configparser.ConfigParser()
-#config.readfp(open(r'.config'))  # local
-config.readfp(open(r'/home/pi/.config'))  # production
-TOKEN = config.get('settings', 'token')
-LOG_PATH = config.get('settings', 'logPath')
-
-##  logger config
-log.basicConfig(
-    filename=LOG_PATH, 
-    filemode='a', 
-    format='%(asctime)s %(levelname).4s (%(lineno).3s %(funcName)s)  %(message)s', 
-    datefmt='[%Y/%m/%d %H:%M:%S]',
-    level=log.INFO)
-log.getLogger().addHandler(log.StreamHandler(stdout))
-
-log.info('Bot initiated, settings loaded.')
+# basic logging function
+def log(INPUT):
+    now = datetime.now()
+    print("[{time}]  {input}".format(time=now.strftime("%m/%d/%Y - %H:%M:%S"), input=INPUT))
 
 
-# 🟢 Exec
+# Exec ——————————————————————————————————————————————————————————————————————————————————
+
+
+# check if script is already running, abort if it is
+log("Boot completed, initialization started.")
+for q in psutil.process_iter():
+    if q.name().startswith('python'):
+        if len(q.cmdline())>1 and "init.py" in q.cmdline()[1] and q.pid !=os.getpid():
+            log("Bot is already running via 'init.py', aborting the start...")
+            exit()
+
+# if bot is not running, begin starting
+log("Bot is not yet running. Starting 'init.py'.")
+
+
+# Main bot script
 try:
     client = discord.Client()
 
     # send print after bot init
-        
+    @client.event
     async def on_ready():
-        log.info('{} has connected to Discord!'.format(client.user.name))
-        print("x")
+        log('{} has connected to {}!'.format(client.user.name, client.guilds))
+        await client.change_presence(activity=discord.Game(name="!rawr"))  # change status of bot to "rawr"
 
     # send to new users joining the server
     #@client.event
@@ -115,21 +112,25 @@ try:
                 await channel.send(random.choice(["Belly!", "Head!"]))
 
         # Starfall keyword
-        if message.content == 'Starfall':
+        elif message.content == 'Starfall':
             response = random.choice(POST_STARFALL_QUOTES)
             await message.channel.send(response)
 
-        # !old who keyword
-        """if message.content.startswith('!who '):
-            query = message.content.split()[-1].capitalize()  # get the last word of the call - "!who is Andrew"  and "!who Andrew" and "!who the fuck is Andrew" work
-            api_response = apiCall("character", query)
-            scrape_response = scrapeCall("character", query)
-            await message.channel.send(api_response + "\n" + scrape_response)
-        """
 
-        # !guild keyword
-        if message.content.startswith('!guild '):
+        # !rawr
+        elif message.content == '!rawr':
+            log("{nickname} asked for bot info.".format(nickname = message.author.display_name))            
+            embedVar = discord.Embed(description="• The commands work when you send a direct message to a bot as well.\n• Bot is under construction so if you had any idea, bug or suggestion, let <@661303805899440148> know!\n• Soon we will have a contest for a name and avatar for the bot, current image is a derp placeholder :)", color=0xdab022)  # settings of embed
+            embedVar.add_field(name="!who *nickname*", value="Gives information about chosen character, including GearScore and ICC progression.", inline=False)
+            #embedVar.add_field(name="!loot *nick, nick nick*", value="Lists recent loot councilled items that went to chosen players", inline=False)
+            embedVar.add_field(name="!guild *Guild Name*", value="Shows basic info about a guild. Work in progress!", inline=False)
+            await message.channel.send(embed=embedVar)
+
+
+        # !guild
+        elif message.content.startswith('!guild '):
             query = message.content.split(" ", 1)[1]  # split by 1 space only, i.e. get everything after the space
+            log("{nickname} queried guild info for '{query}'".format(nickname = message.author.display_name, query=query))
             response = apiCall("guild", query.replace(" ", "+"))
             if response == "doesnt exist":
                 to_send = random.choice(ERROR_MESSAGES) +" " + query + " does not exist."
@@ -141,20 +142,21 @@ try:
                     to_send = to_send[:-1] + ": " + response["online_names_list"]
             await message.channel.send(to_send)
             
-        # !guild reboot
-        if message.content.startswith('!reboot me pls'):
-            print("{} initiated a reboot.".format(message.author))
+
+        # !reboot
+        elif message.content.startswith('!restart me pls'):
+            log("{} initiated a reboot.".format(message.author))
             if message.author.id == 661303805899440148:
-                await client.add_reaction(message, "👍")   
-                await client.change_presence(status=discord.Status.idle)  
+                await message.add_reaction("👍")
+                await client.change_presence(status=discord.Status.idle)
                 os.system('sudo reboot')                
             else:
                 await message.channel.send("Only daddy can rebooty me.")               
 
-        # !who keyword
-        if message.content.startswith('!who '):
+        # !who
+        elif message.content.startswith('!who '):
             query = message.content.split()[-1].capitalize()
-            log.info("{nickname} queried character info for '{query}'".format(nickname = message.author.display_name, query=query))
+            log("{nickname} queried character info for '{query}'".format(nickname = message.author.display_name, query=query))
             api_response = apiCall("character", query)
             if api_response == "doesnt exist":  # if given thing doesnt exist in db
                 await message.channel.send(random.choice(ERROR_MESSAGES) +" " + query + " does not exist.")
@@ -182,22 +184,29 @@ try:
                     "Horde": '860191290829570068'
                 }
 
-                title = "{nickname} ({level})".format( level=api_response["level"], nickname=query)  # title - "Name (level)"
-                description = "<:class{classname}:{icon}> {specs}".format(icon=icons[api_response["class"]], specs=api_response["specs"], classname=api_response["class"].lower())  # descriprion - "Guild • Spec/Spec"
+
+                if api_response["online"] == True:
+                    online_status = "<:Online:861959950721089556>"
+                else:
+                    online_status = ""
+
+                title = "{online} {nickname} ({level})".format(online=online_status, level=api_response["level"], nickname=query)  # title - "Name (level)"
+                description = "<:class{classname}:{icon}> {specs}".format(icon=icons[api_response["class"]], specs=api_response["specs"], classname=api_response["class"].lower().replace(" ",""))  # descriprion - "Guild • Spec/Spec"
                 description += "\n<:{faction}:{icon}> {guild}".format(faction=api_response["faction"], icon=icons[api_response["faction"]], guild=api_response["guild"])  # descriprion - "Guild • Spec/Spec"
                 description += "\n<:Gearscore:861705201362796594> {}".format(str(scrape_response["gs"]))
                 description += "\n<:AchievementPoints:861706248884584459> {}".format(api_response["ap"])
                 icc_completion = ""
 
+
                 embedVar = discord.Embed(title=title, description=description, url='http://armory.warmane.com/character/{nick}/Lordaeron/profile'.format(nick=query), color=0xdab022)
                 if int(scrape_response["ICC10 normal"]) > 0:
-                    icc_completion += "` {}/12 ` 10-man \n".format(scrape_response["ICC10 normal"])
+                    icc_completion += "` {result}/12 ` 10-man NM {lk}\n".format(result=scrape_response["ICC10 normal"], lk=scrape_response["lk"]["10"])
                 if int(scrape_response["ICC10 heroic"]) > 0:
-                    icc_completion += "` {}/12 ` 10-man HC \n".format(scrape_response["ICC10 heroic"])
+                    icc_completion += "` {result}/12 ` 10-man HC {lk}\n".format(result=scrape_response["ICC10 heroic"], lk=scrape_response["lk"]["10hc"])
                 if int(scrape_response["ICC25 normal"]) > 0:
-                    icc_completion += "` {}/12 ` 25-man \n".format(scrape_response["ICC25 normal"])
+                    icc_completion += "` {result}/12 ` 25-man NM {lk}\n".format(result=scrape_response["ICC25 normal"], lk=scrape_response["lk"]["25"])
                 if int(scrape_response["ICC25 heroic"]) > 0:
-                    icc_completion += "` {}/12 ` 25-man HC ".format(scrape_response["ICC25 heroic"])
+                    icc_completion += "` {result}/12 ` 25-man HC {lk}".format(result=scrape_response["ICC25 heroic"], lk=scrape_response["lk"]["25hc"])
                 if icc_completion != "":
                     embedVar.add_field(name="Icecrown Citadel", value=icc_completion, inline=False)
                 #embedVar.add_field(name="\u200b", value="\u200b", inline=True)
@@ -205,9 +214,8 @@ try:
                 await message.channel.send(embed=embedVar)
 
 
-        # !loot
-        if message.content.startswith('!loot '):
-
+        # !loot     
+        elif message.content.startswith('!loot ') and message.channel.guild.name=="Lions Pride" and message.channel.name in ["notepad","officer-chat","officers-and-helpers"]:
             rewarded_list = []
             replace_dict = {
                 "**":"", 
@@ -257,7 +265,7 @@ try:
 
             if query[0:4] == "item":  # if first 4 characters are "item"
                 query = query.split(" ", 1)[1]  # cut off first word (it is surely "item/items")
-                log.info("{nickname} queried item info for '{item}'".format(nickname = message.author.display_name, item=query))
+                log("{nickname} queried item info for '{item}'".format(nickname = message.author.display_name, item=query))
                 await message.channel.send("Doesn't work yet.")
 
             else:  # if it is not for item, i.e. is for character(s)
@@ -267,7 +275,7 @@ try:
                 output_footer = []
                 nicknames = query.replace(","," ").replace("  ", " ").split(" ")
                 nicknames = [i.capitalize() for i in nicknames]  # strip whitespaces around nicknames and capitalize them
-                log.info("{nickname} queried player loot info for '{item}'".format(nickname = message.author.display_name, item=query))
+                log("{nickname} queried player loot info for '{item}'".format(nickname = message.author.display_name, item=query))
 
                 # roll through the queried nicknames
                 for nickname in nicknames:
@@ -279,10 +287,8 @@ try:
                             output.append(rewarded_row)
 
                 output = sorted(output, key=itemgetter(0), reverse=True)
-                #pp.pprint(output)
 
                 # output the collected data to a embed
-                #description = "Coucilled loot for {}.".format(", ".join(nicknames))  # top description row of embed
                 embedVar = discord.Embed(description="", color=0xdab022)  # settings of embed
                 for output_row in output:  # iterate through the prepared list od rewarded items
                     output_row[0] = output_row[0][2:4] + "/" + output_row[0][0:2]  # prepare date to be DD/MM
@@ -303,5 +309,4 @@ try:
     client.run(TOKEN)
 
 except Exception as e:
-    print(e)
-    log.error(e)
+    log(e)

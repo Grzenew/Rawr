@@ -55,6 +55,7 @@ def apiCall(CATEGORY, QUERY, REALM="Lordaeron"):
                         "level": result_array["level"],
                         "class": result_array["class"],
                         "guild": result_array["guild"],
+                        "online": result_array["online"],
                         "faction": result_array["faction"],
                         "ap": result_array["achievementpoints"],                        
                         "specs": "/".join(str(x["tree"]) for x in result_array["talents"]),

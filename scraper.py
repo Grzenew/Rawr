@@ -25,6 +25,12 @@ def scrapeCall(CATEGORY, QUERY, IS_HUNTER=False, REALM="Lordaeron"):
 
         ACHI_DATA = {}
         ANSWER = {}
+        ANSWER["lk"] = {
+            "10": "",
+            "10hc": "",
+            "25": "",
+            "25hc": ""
+        }
         BASE_URL = "http://armory.warmane.com/character/{character}/{realm}/".format(character=QUERY, realm=REALM)
         HEADERS = {'Authorization': 'Bearer 05f7544e468d6067a914a781660486a9612df4478e', 'Cookie': 'PHPSESSID=k3mkdkk1be86l5kr7bu2th5chn'}
 
@@ -193,7 +199,7 @@ def scrapeCall(CATEGORY, QUERY, IS_HUNTER=False, REALM="Lordaeron"):
                     },
                 ]
 
-
+                            
                 for instance_data in output:  # roll through instances gathered from webpage
                     counter = 0  # initialize counter for bosses killed
                     fester = False
@@ -203,11 +209,22 @@ def scrapeCall(CATEGORY, QUERY, IS_HUNTER=False, REALM="Lordaeron"):
                         if boss["td"][1]["_value"] != "- -":  # if value is not - - it means that given person killed given boss
                             counter += 1  # add 1 to the boss kills score
                             if not fester and instance_data['name'][-6:] == "heroic" and (boss["td"][0]["_value"][:6] == "Fester" or boss["td"][0]["_value"][:6] == "Victor") and ACHI_DATA[instance_data['name']] == "0": # if "fester" is not true and its heroic and boss is Fester or LK (Victory over...) and there's no achi for lower ICC
-                                counter += 1  # add 1 since if someone killed Fester, they most probably also killed Marrowgar
+                                counter += 1  # add 1 since if someone killed Fester/LK, they most probably also killed Marrowgar
                                 fester = True  # remember that fester has been added already
+                            
+                            # remember lich king kills for each difficulty
+                            if boss["td"][0]["_value"] == "Victories over the Lich King (Icecrown 10 player)":
+                                ANSWER["lk"]["10"] = "<:Kingslayer10:862028289660813333>"
+                            elif boss["td"][0]["_value"] == "Victories over the Lich King (Heroic Icecrown 10 player)":
+                                ANSWER["lk"]["10hc"] = "<:Bane:862028289743782018>"
+                            elif boss["td"][0]["_value"] == "Victories over the Lich King (Icecrown 25 player)":
+                                ANSWER["lk"]["25"] = "<:Kingslayer25:862028289546387456>"
+                            elif boss["td"][0]["_value"] == "Victories over the Lich King (Heroic Icecrown 25 player)":
+                                ANSWER["lk"]["25hc"] = "<:LightOfDawn:862028289572864011>"
+                                
                     ANSWER[instance_data['name']] = str(counter)  # store kill count in answer
-                    if len(ANSWER[instance_data['name']]) == 1:
-                        ANSWER[instance_data['name']] = " " + ANSWER[instance_data['name']]
+                    if len(ANSWER[instance_data['name']]) == 1: # if digits of the boss counter is 1 (e.g 9/12, and not 10/12)
+                        ANSWER[instance_data['name']] = " " + ANSWER[instance_data['name']] # add a space before
                     
                     
 
@@ -325,7 +342,6 @@ def scrapeCall(CATEGORY, QUERY, IS_HUNTER=False, REALM="Lordaeron"):
         
     except Exception as e:
         print(e)
-        log.error(e)
 
 
 #scrapeCall("character","Frejr",True)

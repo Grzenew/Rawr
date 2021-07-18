@@ -1,43 +1,103 @@
 # Standard lib ———————————————————————————————————————————————————————————————————————————
 import os
 import random
-import pprint
 import psutil
+import logging
+from logging.config import dictConfig
+from time import time, gmtime, strftime
 from configparser import ConfigParser
 from sys import exit
 from operator import itemgetter
-from datetime import datetime
 
 # Third party ———————————————————————————————————————————————————————————————————————————
 import asyncio
 import discord
 
-# Internal ——————————————————————————————————————————————————————————————————————————————
-from api import apiCall
-from scraper import scrapeCall
+
 
 # Settings ——————————————————————————————————————————————————————————————————————————————
-pp = pprint.PrettyPrinter(indent=4)
-POST_STARFALL_QUOTES = [
-    'Bestworldx has no mana for DI! ☄️☄️☄️',
-    'Dcarl has no SIMBOLS DE DIVINIDAD! ☄️☄️☄️',
-    (
-        'DI from Breg misses ☄️☄️☄️, '
-        'DI from Ebe is super effective! 🌜🦉🌛'
-    ),
-]
+
 ERROR_MESSAGES = [
     "Are you a dumdum?",
     "Well played.",
     "Kek.",
     "Wat."
 ]
+LOOT_LIST_ENABLED = [
+    "notepad",
+    "officer-chat",
+    "officers-and-helpers"
+]
+MATA_EMOJIS = [
+    "814549178625163314",
+    "814551666896273449",
+    "817082440665006101",
+    "814551666896273449",
+    "814549233998626908",
+    "818475175767048233",
+    "814551487127617546",
+    '814547569287364608',
+    '864982158355333170',
+    '864982161076781056',
+    '814549288225865748'
+]
 
 # load config
 config = ConfigParser()
-config.read(r'/home/pi/.config')
-TOKEN = config.get('settings', 'token')
-DB_PWD = config.get('settings', 'db_pwd')
+config.read(r'/home/pi/.conf')
+CFG_TOKEN = config.get('settings', 'token')
+CFG_LOGGING_PATH = config.get('settings', 'log_path')
+CFG_TEMPERATURE_PATH = config.get('settings', 'temperature_path')
+
+# logger config
+dictConfig({
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'standard': {
+            'format': '%(asctime)s %(levelname).4s (%(lineno)3s %(module)s/%(funcName)s)  %(message)s', 
+            'datefmt': '[%Y/%m/%d %H:%M:%S]',
+        }
+    },
+   'handlers' : {
+        'default': {
+            'level': 'INFO', 
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard',
+        },
+        'file': {
+            'level': 'INFO', 
+            'class': 'logging.FileHandler',
+            'formatter': 'standard',
+            'filename': CFG_LOGGING_PATH,
+            'mode': 'a',
+        }
+   }, 
+   'loggers': {
+        '__main__': {
+            'level': 'INFO', 
+            'handlers' : ['default', 'file'], 
+            'propagate': False,
+        },
+        'scraper': {
+            'level': 'INFO', 
+            'handlers' : ['default', 'file'], 
+            'propagate': False,
+        },
+   },
+   'root': {
+        'level': 'WARN',
+        'handlers': ['default', 'file']
+   },
+})
+
+# create logger
+log = logging.getLogger(__name__)
+
+
+# Internal ——————————————————————————————————————————————————————————————————————————————
+from api import apiCall
+from scraper import scrapeCall
 
 
 # Functions —————————————————————————————————————————————————————————————————————————————
@@ -48,25 +108,26 @@ def month_num(month):
     out = m[s]
     return out
 
-# basic logging function
-def log(INPUT):
-    now = datetime.now()
-    print("[{time}]  {input}".format(time=now.strftime("%m/%d/%Y - %H:%M:%S"), input=INPUT))
+# check if a message is too long for discord output
+def strip_msg(message, length=2000):
+    if len(message) > length: 
+        message = message[:length-12] + "\n(too long)"  # return the longest possible part of message + information it has been to long
+    return message
 
 
 # Exec ——————————————————————————————————————————————————————————————————————————————————
 
 
 # check if script is already running, abort if it is
-log("Boot completed, initialization started.")
+log.info("Boot completed, initialization started.")
 for q in psutil.process_iter():
     if q.name().startswith('python'):
         if len(q.cmdline())>1 and "init.py" in q.cmdline()[1] and q.pid !=os.getpid():
-            log("Bot is already running via 'init.py', aborting the start...")
+            log.info("Bot is already running via 'init.py', aborting the start...")
             exit()
 
 # if bot is not running, begin starting
-log("Bot is not yet running. Starting 'init.py'.")
+log.info("Bot is not yet running. Starting 'init.py'.")
 
 
 # Main bot script
@@ -76,21 +137,15 @@ try:
     # send print after bot init
     @client.event
     async def on_ready():
-        log('{} has connected to {}!'.format(client.user.name, client.guilds))
-        await client.change_presence(activity=discord.Game(name="!rawr"))  # change status of bot to "rawr"
+        log.info('{} has connected to {}!'.format(client.user.name, client.guilds))
+        await client.change_presence(activity=discord.Game(name="!rawr"))  # change status of bot to "In game: !rawr"
 
-    # send to new users joining the server
-    #@client.event
-    #async def on_member_join(member):
-    #    await member.create_dm()
-    #    await member.dm_channel.send(
-    #        f'Hi {member.name}, gib me strudels!'
-    #    )
 
-    # if user writes "tomb", then bot asks given dude for :sindra: reaction. If user gives it, then bot responds with random "belly/head" OR "Wipe" if 60 secs pass w/o any action
     # if someone writes "Starfall", a random str gets printed by the bot
     @client.event
     async def on_message(message):
+
+        author_nickname = message.author.display_name+" ("+message.author.name+"#"+message.author.discriminator+")"
 
         # avoid endless loop in case bot said its own trigger word
         if message.author == client.user:
@@ -111,15 +166,10 @@ try:
             else:
                 await channel.send(random.choice(["Belly!", "Head!"]))
 
-        # Starfall keyword
-        elif message.content == 'Starfall':
-            response = random.choice(POST_STARFALL_QUOTES)
-            await message.channel.send(response)
-
 
         # !rawr
         elif message.content == '!rawr':
-            log("{nickname} asked for bot info.".format(nickname = message.author.display_name))            
+            log.info("{} asked for bot info.".format(author_nickname))            
             embedVar = discord.Embed(description="• The commands work when you send a direct message to a bot as well.\n• Bot is under construction so if you had any idea, bug or suggestion, let <@661303805899440148> know!\n• Soon we will have a contest for a name and avatar for the bot, current image is a derp placeholder :)", color=0xdab022)  # settings of embed
             embedVar.add_field(name="!who *nickname*", value="Gives information about chosen character, including GearScore and ICC progression.", inline=False)
             #embedVar.add_field(name="!loot *nick, nick nick*", value="Lists recent loot councilled items that went to chosen players", inline=False)
@@ -130,7 +180,7 @@ try:
         # !guild
         elif message.content.startswith('!guild '):
             query = message.content.split(" ", 1)[1]  # split by 1 space only, i.e. get everything after the space
-            log("{nickname} queried guild info for '{query}'".format(nickname = message.author.display_name, query=query))
+            log.info("{} queried guild info for '{}'".format(author_nickname, query))
             response = apiCall("guild", query.replace(" ", "+"))
             if response == "doesnt exist":
                 to_send = random.choice(ERROR_MESSAGES) +" " + query + " does not exist."
@@ -143,20 +193,56 @@ try:
             await message.channel.send(to_send)
             
 
-        # !reboot
-        elif message.content.startswith('!restart me pls'):
-            log("{} initiated a reboot.".format(message.author))
+        # !pls - system commands
+        elif message.content.startswith('!pls'):            
+            log.info("{} sent '{}'.".format(author_nickname, message.content))
             if message.author.id == 661303805899440148:
-                await message.add_reaction("👍")
-                await client.change_presence(status=discord.Status.idle)
-                os.system('sudo reboot')                
+                query = message.content.split(" ")  # split by spaces
+                if len(query) > 1:  # if has more than one element, i.e. has some command
+
+                    # restarting bot
+                    if query[1] in ["reboot", "restart"]:
+                        await message.add_reaction("👍")
+                        await client.change_presence(status=discord.Status.idle)
+                        os.system("sudo reboot")
+
+                    # stopping bot
+                    elif query[1] in ["exit", "stop"]:
+                        await message.add_reaction("👍")
+                        exit()
+
+                    # reading from log
+                    elif query[1] == "log":
+                        lines_to_read = int(query[2])  # get 2nd argument, i.e amount of lines to read
+                        log_file = open(CFG_LOGGING_PATH, "r")
+                        file = log_file.readlines()
+                        last_lines = "".join(file[-lines_to_read:])
+                        if len(last_lines) > 1999:
+                            last_lines = last_lines[:1985] + "\n (too long)"
+                        dm = await message.author.create_dm()
+                        await dm.send("`"+last_lines+"`")
+
+                # in nothing was given, measure temperature
+                else:
+                    os.system("vcgencmd measure_temp")
+                    uptime = time() - psutil.boot_time()
+                    uptime_msg = "<:Online:861959950721089556> " + strftime("%H hours, %M minutes", gmtime(uptime))
+                    temperature = int(open(CFG_TEMPERATURE_PATH).readline())
+                    temperature = str(round(temperature/1000, 2))
+                    temperature_msg = "🔥 " + temperature + "°C"
+                    await message.channel.send("{}\n{}".format(temperature_msg, uptime_msg))
+
+                    # delete message if it is on a server, not a DM
+                    if message.guild is not None and message.author != client.user:  
+                        await message.delete()
+
             else:
-                await message.channel.send("Only daddy can rebooty me.")               
+                await message.channel.send("Only daddy can do dis.")               
 
         # !who
         elif message.content.startswith('!who '):
             query = message.content.split()[-1].capitalize()
-            log("{nickname} queried character info for '{query}'".format(nickname = message.author.display_name, query=query))
+            log.info("{} queried character info for '{}'".format(author_nickname, query))
             api_response = apiCall("character", query)
             if api_response == "doesnt exist":  # if given thing doesnt exist in db
                 await message.channel.send(random.choice(ERROR_MESSAGES) +" " + query + " does not exist.")
@@ -215,78 +301,95 @@ try:
 
 
         # !loot     
-        elif message.content.startswith('!loot ') and message.channel.guild.name=="Lions Pride" and message.channel.name in ["notepad","officer-chat","officers-and-helpers"]:
-            rewarded_list = []
-            replace_dict = {
-                "**":"", 
-                "  ":" ",
-                " (offhand)":"",
-                " (OS)":"",
-                "- ":": ",
-                "Marks:":"Mark:",
-                " (trinket)":""
-            }
-            # manually add two rows for data from first message
-            rewarded_list.append(["0401", "Glowing Twilight Scale", "Frejr"])
-            rewarded_list.append(["0401", "Charred Twilight Scale", "Gotfai"])
- 
-            async for msg in client.get_channel(827234214982058045).history(limit=100): # As an example, I've set the limit to 10000
-                if msg.id != 827234534280921139:  # skip the description message
+        elif message.content.startswith('!loot '):
 
-                    message_whole = msg.content
-                    for replace_key in replace_dict.keys():  # replace all strings as in the dict above
-                        message_whole = message_whole.replace(replace_key, replace_dict[replace_key])
-                    message_whole = message_whole.split("\n")  # split message into list of rows
-                    message_whole = [i.strip() for i in message_whole]  # strip front/back whitespaces in each row
+            # if it was sent via DM
+            if message.guild is None:
+                dm = await message.author.create_dm()
+                await dm.send("Sorries, it doesn't work via DM. Try on {}".format(", ".join(LOOT_LIST_ENABLED)))
 
-                    # date
-                    msg_date = message_whole[0].split(" ")  # split date to 2 elements
-                    msg_date[1] = month_num(msg_date[1])  # convert month to number
-                    msg_date[0] = msg_date[0].replace("st", "").replace("th", "").replace("nd", "").replace("rd", "").zfill(2)  # remove affixes and fill zero in front if needed
-                    msg_date = "".join(reversed(msg_date))  # join month and day in reversed order, so that you can sort by month and day
+            # if it was sent on a channel, check if server is Lions' and if this command is enabled for this channel
+            elif (message.channel.guild.name=="Lions Pride" or message.channel.guild.name=="Rawr Dev") and message.channel.name in LOOT_LIST_ENABLED:
+                rewarded_list = []
+                replace_dict = {  # all occurences from first column will be replaced with that from 2nd column
+                    "**":"", 
+                    "  ":" ",
+                    " (offhand)":"",
+                    " (OS)":"",
+                    "- ":": ",
+                    "Marks:":"Mark:",
+                    " (trinket)":"",
+                    "Mark: Cede\n":"Mark: Cedevitago\n"
+                }
 
-                    # items
-                    msg_items = message_whole[1:]  # separate items rows from date row
-                    for item in msg_items:  # roll through all items in this message
-                        item_data = item.split(": ")  # split by ": " to get item name separated
-                        item_name = item_data[0]  # get the item name
-                        item_persons = item_data[1].replace(" / ", ", ").replace(" & ", ", ").split(", ")  # divide persons by ", "
-                        for person in item_persons:  # roll through all persons
-                            if "(x2)" in person:  # if given person name has (x2)
-                                person = person.replace(" (x2)", "")  # remove " (x2)" from the person's name
-                                rewarded_list.append([msg_date, item_name, person])
-                                rewarded_list.append([msg_date, item_name, person])
-                            else:
-                                rewarded_list.append([msg_date, item_name, person])
+                # manually add two rows for data from first message
+                rewarded_list.append(["0401", "Glowing Twilight Scale", "Frejr"])
+                rewarded_list.append(["0401", "Charred Twilight Scale", "Gotfai"])
+    
+                async for msg in client.get_channel(827234214982058045).history(limit=200): # How many messages to be scanned in the loot
+                    if msg.id != 827234534280921139:  # skip the description message
+
+                        message_whole = msg.content
+                        for replace_key in replace_dict.keys():  # replace all strings as in the dict above
+                            message_whole = message_whole.replace(replace_key, replace_dict[replace_key])
+                        message_whole = message_whole.split("\n")  # split message into list of rows
+                        message_whole = [i.strip() for i in message_whole]  # strip front/back whitespaces in each row
+
+                        # date
+                        msg_date = message_whole[0].split(" ")  # split date to 2 elements
+                        msg_date[1] = month_num(msg_date[1])  # convert month to number
+                        msg_date[0] = msg_date[0].replace("st", "").replace("th", "").replace("nd", "").replace("rd", "").zfill(2)  # remove affixes and fill zero in front if needed
+                        msg_date = "".join(reversed(msg_date))  # join month and day in reversed order, so that you can sort by month and day
+
+                        # items
+                        msg_items = message_whole[1:]  # separate items rows from date row
+                        for item in msg_items:  # roll through all items in this message
+                            item_data = item.split(": ")  # split by ": " to get item name separated
+                            item_name = item_data[0]  # get the item name
+                            item_persons = item_data[1].replace(" / ", ", ").replace(" & ", ", ").split(", ")  # divide persons by ", "
+                            for person in item_persons:  # roll through all persons
+                                if "(x2)" in person:  # if given person name has (x2)
+                                    person = person.replace(" (x2)", "")  # remove " (x2)" from the person's name
+                                    rewarded_list.append([msg_date, item_name, person])
+                                    rewarded_list.append([msg_date, item_name, person])
+                                else:
+                                    rewarded_list.append([msg_date, item_name, person])
 
 
-            # do actions related ot the query
-            query = message.content.split(" ", 1)[1]  # get rid of "!loot" for query
+                # do actions related ot the query
+                query = message.content.split(" ", 1)[1]  # get rid of "!loot" for query
 
-            if query[0:4] == "item":  # if first 4 characters are "item"
-                query = query.split(" ", 1)[1]  # cut off first word (it is surely "item/items")
-                log("{nickname} queried item info for '{item}'".format(nickname = message.author.display_name, item=query))
-                await message.channel.send("Doesn't work yet.")
-
-            else:  # if it is not for item, i.e. is for character(s)
                 output = []
                 output_rows = ""
+                footer_too_long = ""
                 loot_counter = {}
                 output_footer = []
                 nicknames = query.replace(","," ").replace("  ", " ").split(" ")
                 nicknames = [i.capitalize() for i in nicknames]  # strip whitespaces around nicknames and capitalize them
-                log("{nickname} queried player loot info for '{item}'".format(nickname = message.author.display_name, item=query))
+                log.info("{} queried player loot info for '{}'".format(author_nickname, query))
 
                 # roll through the queried nicknames
-                for nickname in nicknames:
+                if message.content.split(" ", 1)[1] == "all":
                     for rewarded_row in rewarded_list:  # roll through rewarded 
-                        if rewarded_row[2] == nickname:  # is 3rd value of the rewarded list's row is equal to nickname?
-                            if nickname not in loot_counter:
-                                loot_counter[nickname] = 0
-                            loot_counter[nickname] += 1
-                            output.append(rewarded_row)
+                        if rewarded_row[2] not in loot_counter:
+                            loot_counter[rewarded_row[2]] = 0
+                        loot_counter[rewarded_row[2]] += 1
+                        output.append(rewarded_row)
+                else:
+                    for nickname in nicknames:
+                        for rewarded_row in rewarded_list:  # roll through rewarded 
+                            if rewarded_row[2] == nickname:  # is 3rd value of the rewarded list's row is equal to nickname?
+                                if nickname not in loot_counter:
+                                    loot_counter[nickname] = 0
+                                loot_counter[nickname] += 1
+                                output.append(rewarded_row)
 
                 output = sorted(output, key=itemgetter(0), reverse=True)
+
+                # Discord's char limit is 1024, otherwise message is not sent. Each row takes ~50 characters, so on average there should be max rows displayed.
+                if len(output) > 20:
+                    output = output[:21]
+                    footer_too_long = "\n⚠️ List was too long, oldest items were cleaved"
 
                 # output the collected data to a embed
                 embedVar = discord.Embed(description="", color=0xdab022)  # settings of embed
@@ -296,17 +399,29 @@ try:
                     output_row[1] = output_row[1].replace(" heroic", " **HC**").replace(" Heroic", " **HC**")  # replace Heroic with HC
                     output_rows += output_row[0] + " " + output_row[2] +  " " + output_row[1] + "\n"
 
+                # sort by amount of items gained 
+                loot_counter = dict(sorted(loot_counter.items(), key=lambda item: item[1], reverse=True))
+
                 for counter_nick, counter_count in loot_counter.items():  # iterate through the counter items and prepare footer items
                     output_footer.append("{} ({})".format(counter_nick, counter_count))
-                output_footer = "⠀•⠀".join(output_footer)  # split footer items by a dot
+                output_footer = "⠀•⠀".join(output_footer) + footer_too_long  # split footer items by a dot
 
                 # add joined fields to the embed output, add foter and print to channel
-                embedVar.add_field(name="Coucilled loot for {}.".format(", ".join(nicknames)), value=output_rows, inline=True)
+                embedVar.add_field(name="Councilled loot for {}".format(", ".join(nicknames)), value=output_rows, inline=True)
+                embedVar.set_thumbnail(url='https://cdn.discordapp.com/emojis/{}.png'.format(random.choice(MATA_EMOJIS)))
                 embedVar.set_footer(text=output_footer)
-                await message.channel.send(embed=embedVar)
+
+                # if there was some data, print, otherwise output error
+                if len(output) > 0:
+                    await message.channel.send(embed=embedVar)
+                else:
+                    await message.channel.send("Seemingly there has been no loot for {}".format(", ".join(nicknames)))
+
+                # remove the author's call message
+                await message.delete()
 
 
-    client.run(TOKEN)
+    client.run(CFG_TOKEN)
 
 except Exception as e:
-    log(e)
+    log.info(e)

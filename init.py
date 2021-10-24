@@ -23,6 +23,12 @@ ERROR_MESSAGES = [
     "Kek.",
     "Wat."
 ]
+ADMIN_RIGHTS = [
+    436167336337211394, # gotfai
+    362977236132823042, # mata
+    630128046006861854, # wolf
+    661303805899440148  # frej
+]
 LOOT_LIST_ENABLED = [
     "notepad",
     "officer-chat",
@@ -196,7 +202,7 @@ try:
         # !pls - system commands
         elif message.content.startswith('!pls'):            
             log.info("{} sent '{}'.".format(author_nickname, message.content))
-            if message.author.id == 661303805899440148:
+            if message.author.id in ADMIN_RIGHTS:
                 query = message.content.split(" ")  # split by spaces
                 if len(query) > 1:  # if has more than one element, i.e. has some command
 
@@ -207,7 +213,7 @@ try:
                         os.system("sudo reboot")
 
                     # stopping bot
-                    elif query[1] in ["exit", "stop"]:
+                    elif query[1] in ["exit", "stop"] and message.author.id == 661303805899440148:
                         await message.add_reaction("👍")
                         exit()
 
@@ -370,6 +376,7 @@ try:
 
                 # roll through the queried nicknames
                 if message.content.split(" ", 1)[1] == "all":
+                    print("all")
                     for rewarded_row in rewarded_list:  # roll through rewarded 
                         if rewarded_row[2] not in loot_counter:
                             loot_counter[rewarded_row[2]] = 0
@@ -388,7 +395,7 @@ try:
 
                 # Discord's char limit is 1024, otherwise message is not sent. Each row takes ~50 characters, so on average there should be max rows displayed.
                 if len(output) > 20:
-                    output = output[:21]
+                    output = output[:20]
                     footer_too_long = "\n⚠️ List was too long, oldest items were cleaved"
 
                 # output the collected data to a embed
@@ -419,6 +426,10 @@ try:
 
                 # remove the author's call message
                 await message.delete()
+
+        if message.guild is None and message.author != client.user:
+            if message.channel.id == message.author.dm_channel.id:
+                log.info("{} DM'd: '{}'".format(author_nickname, message.content))
 
 
     client.run(CFG_TOKEN)

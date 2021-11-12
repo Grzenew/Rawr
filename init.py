@@ -32,7 +32,7 @@ ADMIN_RIGHTS = [
 LOOT_LIST_ENABLED = [
     "notepad",
     "officer-chat",
-    "officers-and-helpers"
+    "loot-council"
 ]
 MATA_EMOJIS = [
     "814549178625163314",

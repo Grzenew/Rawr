@@ -1,5 +1,5 @@
 # Rawr
-v1.7
+v2.0
 Discord bot for them rawrs and strudels.
 
 * Discord api   https://discordpy.readthedocs.io/en/stable/api.html
@@ -11,13 +11,17 @@ Discord bot for them rawrs and strudels.
 * Database api   http://mop.cavernoftime.com/api
 
 ## Commands
-- tomb
-- Starfall
 - !who nickname
 - !guild Guild Name
 - !loot nick, nick nick
+- !pls
+   - !pls git pull
+   - !pls stop
+   - !pls reboot
+   - !pls logs 10
 
 ## Changelog
+2.0 - reverted to working version
 1.7 - logging refactor, !loot refactor
 1.6 - GS fixes, loot layout fix, !who redesign, init refactor
 1.5 - gearscore calculation

@@ -1,5 +1,5 @@
 # Standard lib ———————————————————————————————————————————————————————————————————————————
-import os
+import os, subprocess
 import random
 import psutil
 import logging
@@ -24,6 +24,10 @@ ERROR_MESSAGES = [
     "Wat."
 ]
 ADMIN_RIGHTS = [
+    436167336337211394, # gotfai
+    661303805899440148  # frej
+]
+OFFICER_RIGHTS = [
     436167336337211394, # gotfai
     362977236132823042, # mata
     630128046006861854, # wolf
@@ -50,10 +54,10 @@ MATA_EMOJIS = [
 
 # load config
 config = ConfigParser()
-config.read(r'/home/pi/.conf')
+config.read(r'/home/pi/production/Rawr/.conf')
 CFG_TOKEN = config.get('settings', 'token')
 CFG_LOGGING_PATH = config.get('settings', 'log_path')
-CFG_TEMPERATURE_PATH = config.get('settings', 'temperature_path')
+#CFG_TEMPERATURE_PATH = config.get('settings', 'temperature_path')
 
 # logger config
 dictConfig({
@@ -202,9 +206,12 @@ try:
         # !pls - system commands
         elif message.content.startswith('!pls'):            
             log.info("{} sent '{}'.".format(author_nickname, message.content))
-            if message.author.id in ADMIN_RIGHTS:
+            if message.author.id in OFFICER_RIGHTS:
                 query = message.content.split(" ")  # split by spaces
                 if len(query) > 1:  # if has more than one element, i.e. has some command
+
+                    print(query[1])
+                    print(message.author.id)
 
                     # restarting bot
                     if query[1] in ["reboot", "restart"]:
@@ -213,9 +220,22 @@ try:
                         os.system("sudo reboot")
 
                     # stopping bot
-                    elif query[1] in ["exit", "stop"] and message.author.id == 661303805899440148:
+                    elif query[1] in ["exit", "stop"] and message.author.id in ADMIN_RIGHTS:
                         await message.add_reaction("👍")
                         exit()
+
+                    # stopping bot
+                    elif query[1] == "git" and message.author.id in ADMIN_RIGHTS:
+                        if query[2] == "status":
+                            await message.add_reaction("👍")
+                            batcmd="git --git-dir=production/Rawr/.git fetch ; git --git-dir=production/Rawr/.git status"
+                            result = subprocess.check_output(batcmd, shell=True).splitlines()
+                            await message.channel.send("{}".format(result[1].decode("utf-8")))
+                        if query[2] == "pull":
+                            await message.add_reaction("👍")
+                            batcmd="git --git-dir=production/Rawr/.git pull"
+                            result = subprocess.check_output(batcmd, shell=True)
+
 
                     # reading from log
                     elif query[1] == "log":
@@ -230,10 +250,11 @@ try:
 
                 # in nothing was given, measure temperature
                 else:
-                    os.system("vcgencmd measure_temp")
+                    #os.system("vcgencmd measure_temp")
                     uptime = time() - psutil.boot_time()
                     uptime_msg = "<:Online:861959950721089556> " + strftime("%H hours, %M minutes", gmtime(uptime))
-                    temperature = int(open(CFG_TEMPERATURE_PATH).readline())
+                    #temperature = int(open(CFG_TEMPERATURE_PATH).readline())
+                    temperature = int(os.popen("vcgencmd measure_temp").readline())
                     temperature = str(round(temperature/1000, 2))
                     temperature_msg = "🔥 " + temperature + "°C"
                     await message.channel.send("{}\n{}".format(temperature_msg, uptime_msg))

@@ -350,8 +350,8 @@ try:
                 }
 
                 # manually add two rows for data from first message
-                rewarded_list.append(["0401", "Glowing Twilight Scale", "Frejr"])
-                rewarded_list.append(["0401", "Charred Twilight Scale", "Gotfai"])
+                rewarded_list.append(["20210401", "Glowing Twilight Scale", "Frejr"])
+                rewarded_list.append(["20210401", "Charred Twilight Scale", "Gotfai"])
     
                 async for msg in client.get_channel(827234214982058045).history(limit=200): # How many messages to be scanned in the loot
                     if msg.id != 827234534280921139:  # skip the description message
@@ -363,7 +363,7 @@ try:
                         message_whole = [i.strip() for i in message_whole]  # strip front/back whitespaces in each row
 
                         # date
-                        msg_date = message_whole[0].split(" ")  # split date to 2 elements
+                        msg_date = message_whole[0].split(" ")  # split date to 3 elements
                         msg_date[1] = month_num(msg_date[1])  # convert month to number
                         msg_date[0] = msg_date[0].replace("st", "").replace("th", "").replace("nd", "").replace("rd", "").zfill(2)  # remove affixes and fill zero in front if needed
                         msg_date = "".join(reversed(msg_date))  # join month and day in reversed order, so that you can sort by month and day
@@ -422,7 +422,7 @@ try:
                 # output the collected data to a embed
                 embedVar = discord.Embed(description="", color=0xdab022)  # settings of embed
                 for output_row in output:  # iterate through the prepared list od rewarded items
-                    output_row[0] = output_row[0][2:4] + "/" + output_row[0][0:2]  # prepare date to be DD/MM
+                    output_row[0] = output_row[0][-2:] + "/" + output_row[0][4] + output_row[0][5] + "/" + output_row[0][:4]   # prepare date to be DD/MM/YY
                     output_row[2] = "**{}**".format(output_row[2])  # make item name t h i c c
                     output_row[1] = output_row[1].replace(" heroic", " **HC**").replace(" Heroic", " **HC**")  # replace Heroic with HC
                     output_rows += output_row[0] + " " + output_row[2] +  " " + output_row[1] + "\n"

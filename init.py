@@ -422,7 +422,7 @@ try:
                 # output the collected data to a embed
                 embedVar = discord.Embed(description="", color=0xdab022)  # settings of embed
                 for output_row in output:  # iterate through the prepared list od rewarded items
-                    output_row[0] = output_row[0][-2:] + "/" + output_row[0][4] + output_row[0][5] + "/" + output_row[0][:4]   # prepare date to be DD/MM/YY
+                    output_row[0] = output_row[0][-2:] + "/" + output_row[0][4] + output_row[0][5] + "/" + output_row[0][2] + output_row[0][3]   # prepare date to be DD/MM/YY
                     output_row[2] = "**{}**".format(output_row[2])  # make item name t h i c c
                     output_row[1] = output_row[1].replace(" heroic", " **HC**").replace(" Heroic", " **HC**")  # replace Heroic with HC
                     output_rows += output_row[0] + " " + output_row[2] +  " " + output_row[1] + "\n"
